@@ -1,0 +1,11 @@
+<dashboard version="1.1" script="critique.js" hideEdit="true" hideFilters="true" theme="dark">
+  <label>SPL Critic</label>
+  <description>AI-powered second opinions for your Splunk searches — structural critique before you burn the compute.</description>
+  <row>
+    <panel>
+      <html>
+        <div id="spl-critic-root">Loading SPL Critic…</div>
+      </html>
+    </panel>
+  </row>
+</dashboard>

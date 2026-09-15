@@ -1,0 +1,774 @@
+{
+  "ruleset_version": "d6028124f92b",
+  "samples": [
+    {
+      "bad": {
+        "expected_codes": [
+          "ALLTIME_RANGE"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=security sourcetype=ids_alert earliest=0 | stats count by signature"
+      },
+      "demo": {
+        "cron": "*/5 * * * *",
+        "disabled": true,
+        "earliest": "0",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "The classic zombie: scheduled every 5 minutes, earliest=0 rescans all of retention each run, and the search itself is disabled \u2014 still occupying a scheduled-search slot definitionally, invisible until someone audits.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=security sourcetype=ids_alert earliest=-24h | stats count by signature"
+      },
+      "id": "alltime-zombie",
+      "title": "Sample - All Time Zombie Alert"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "APPENDCOLS_POSITIONAL",
+          "SUBSEARCH_RISK"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=web sourcetype=access_combined status=500 | stats count by host | appendcols [search index=web sourcetype=access_combined status=500 | stats avg(bytes) by host]"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "appendcols stitches columns by row position, not a key \u2014 different ordering or lengths misalign every value. Computing both aggregates in one pass by the key is correct and cheaper (no second dispatch, no positional risk).\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=500 | stats count avg(bytes) AS avg_bytes by host"
+      },
+      "id": "appendcols-positional",
+      "title": "Sample - Appendcols Positional Join"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "BARE_STAR"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "* | stats count by host"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "A bare * retrieves everything the platform allows \u2014 no lexicon terms to intersect, no bloom elimination. Anchor with index + sourcetype + a term.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=200 | stats count by host"
+      },
+      "id": "bare-star-retrieval",
+      "title": "Sample - Bare Star Retrieval"
+    },
+    {
+      "demo": {
+        "cron": "0 */4 * * *",
+        "disabled": false,
+        "earliest": "-4h@h",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "Scoped retrieval, then enrichment: the lookup applies only to events that survived the indexed filters.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=network sourcetype=fw_traffic action=blocked | lookup asset_inventory ip AS src_ip OUTPUT owner | stats count BY owner"
+      },
+      "id": "bounded-lookup-enrichment",
+      "title": "Sample - Bounded Lookup Enrichment"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "BROAD_TIME_RANGE"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=web sourcetype=access_combined earliest=-90d | timechart span=1d count"
+      },
+      "demo": {
+        "cron": "0 6 * * *",
+        "disabled": false,
+        "earliest": "-90d@d",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "I/O scales linearly with the window. A 90-day window on a search consumed daily pays a ~13x multiplier over the 7 days that answer the question.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined earliest=-7d | timechart span=1d count"
+      },
+      "id": "broad-time-range",
+      "title": "Sample - Broad Time Range"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "COLLECT_DUPLICATION"
+        ],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=500 | collect index=summary"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "collect has no dedup intelligence \u2014 re-running over an already-summarized range duplicates every row. Drive it from one non-overlapping schedule (low).\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=500 | stats count by uri_path"
+      },
+      "id": "collect-duplication",
+      "title": "Sample - Collect Duplication"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "DEDUP_VS_STATS"
+        ],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=500 | dedup clientip | stats count"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "Without sortby, WHICH event survives dedup is order-dependent and it runs on the SH. stats latest() by the key is deterministic and map-reducible (low).\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=500 | stats latest(_time) AS last by clientip"
+      },
+      "id": "dedup-without-sortby",
+      "title": "Sample - Dedup Without Sortby"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "DELETE_COMMAND"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=web sourcetype=access_combined status=404 | delete"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "delete is irreversible, frees no disk, and hides data from every search. It never belongs in a scheduled or ad-hoc analytics search \u2014 the safe intent is a scoped read. Never installed as a demo search.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=404 | stats count by uri_path"
+      },
+      "id": "delete-in-search",
+      "title": "Sample - Delete In Search"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "DEPRECATED_TIME_MODIFIER"
+        ],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=500 daysago=7 | stats count by clientip"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "daysago= is a legacy modifier documented as valid but slated for removal; the snap-aware earliest/latest form is precise and future-proof (low).\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=500 earliest=-7d@d latest=now | stats count by clientip"
+      },
+      "id": "deprecated-time-modifier",
+      "title": "Sample - Deprecated Time Modifier"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "EARLY_CENTRALIZED"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=web | head 1000 | search status=500 | stats count by uri_path"
+      },
+      "demo": {
+        "cron": "*/30 * * * *",
+        "disabled": false,
+        "earliest": "-30m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "head is centralized streaming \u2014 placing it before the status filter drags the unfiltered stream to the search head, then throws most of it away.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web status=500 | head 1000 | stats count by uri_path"
+      },
+      "id": "early-centralized",
+      "title": "Sample - Early Centralized Commands"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "EXCLUSION_PATTERN"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=web sourcetype=access_combined status!=200 | stats count by status"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "Exclusion (field!=x) can't use the lexicon the way inclusion can \u2014 Splunk retrieves candidates then discards them, and != also drops null-field events.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined (status=404 OR status=500) | stats count by status"
+      },
+      "id": "exclusion-in-base",
+      "title": "Sample - Exclusion In Base Search"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "UNBOUNDED_INDEX",
+          "LEADING_WILDCARD",
+          "TRANSACTION_ABUSE"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=* *error* | transaction host | table host, _time, _raw"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "The on-stage query: three anti-patterns stacked \u2014 scan every index, defeat the lexicon with a leading wildcard, then assemble transactions from the unfiltered stream on the search head. The rewrite scopes retrieval and replaces transaction with stats.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status>=500 | stats earliest(_time) AS first_seen latest(_time) AS last_seen count BY host"
+      },
+      "id": "flagship-demo",
+      "title": "Demo - Act 4 Live Critique"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "COMPLEX_REGEX"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=web sourcetype=access_combined | rex field=_raw \"(.*)error(.*)fatal(.*)\""
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "Multiple .* in one rex forces backtracking across full _raw for every event. Anchor with negated classes ([^,]+) and extract once into named fields.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined | rex field=_raw \"error=(?<err>[^,]+)\""
+      },
+      "id": "greedy-regex",
+      "title": "Sample - Greedy Regex Over Raw"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "HIGH_CARDINALITY_BY"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=web sourcetype=access_combined | stats count by clientip, uri"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "stats by a near-unique field (uri) builds one bucket per value \u2014 SH memory scales with cardinality. Aggregate by the dimension you actually report on.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined | stats count by status"
+      },
+      "id": "high-cardinality-by",
+      "title": "Sample - High Cardinality By"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "LATE_FILTER"
+        ],
+        "expected_verdict": "warn",
+        "spl": "sourcetype=my_source | lookup my_lookup_file D OUTPUTNEW L | eval E=L/T | search A=25 L>100 E>50"
+      },
+      "demo": {
+        "cron": "0 */2 * * *",
+        "disabled": false,
+        "earliest": "-2h@h",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "The canonical pipeline-order example: A=25 belongs in the base search, L>100 immediately after the lookup that creates L; only E>50 must wait for the eval. Filtering last transforms rows that were always going to be dropped.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "sourcetype=my_source A=25 | lookup my_lookup_file D OUTPUTNEW L | search L>100 | eval E=L/T | search E>50"
+      },
+      "id": "late-filtering",
+      "title": "Sample - Late Filtering"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "LEADING_WILDCARD"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=web *error* | stats count by status"
+      },
+      "demo": {
+        "cron": "*/30 * * * *",
+        "disabled": false,
+        "earliest": "-30m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "*error* bypasses the lexicon and bloom filters \u2014 every term in every bucket is examined. An anchored field filter restores index-time elimination.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=5* | stats count by status"
+      },
+      "id": "leading-wildcard-search",
+      "title": "Sample - Leading Wildcard Search"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "LOOKUP_BEFORE_AGG"
+        ],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined | lookup http_status_desc status OUTPUT description | stats count by status"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "The lookup enriches every raw event, but its output (description) is not used by the stats \u2014 so it can move after the aggregation and match a handful of grouped rows instead of every event (low: cost).\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined | stats count by status | lookup http_status_desc status OUTPUT description"
+      },
+      "id": "lookup-before-agg",
+      "title": "Sample - Lookup Before Aggregation"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "SUBSEARCH_EXPLOSION"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=web sourcetype=access_combined status=500 | head 50 | map search=\"search index=app host=$host$\""
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "map dispatches a separate search per input row \u2014 a concurrent search storm that skips OTHER scheduled searches. Restructure to one search with a key.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=500 | stats count by host"
+      },
+      "id": "map-command-explosion",
+      "title": "Sample - Map Command Explosion"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "MID_TOKEN_WILDCARD"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=web sourcetype=access_combined host=web*prod-01 | stats count by status"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "A wildcard spanning punctuation (host=web*prod-01) fights the segmenter and can silently match differently than intended. Match whole segments or TERM().\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined host=\"webserver-prod-01\" | stats count by status"
+      },
+      "id": "mid-token-wildcard",
+      "title": "Sample - Mid Token Wildcard"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "MISSING_SOURCETYPE"
+        ],
+        "expected_verdict": "approved",
+        "spl": "index=app log_level=ERROR | stats count by component"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "An index filter alone pulls every event class in that index. Adding sourcetype narrows the lexicon walk and downstream extraction (low: advisory).\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=app sourcetype=app_logs log_level=ERROR | stats count by component"
+      },
+      "id": "missing-sourcetype-scope",
+      "title": "Sample - Missing Sourcetype Scope"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "MISSING_TERM_DIRECTIVE"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=network 10.1.2.3 | stats count by action"
+      },
+      "demo": {
+        "cron": "*/15 * * * *",
+        "disabled": false,
+        "earliest": "-15m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "A raw IP is segmented on the dots; TERM(10.1.2.3) matches it as one lexicon term instead of intersecting four segments.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=network TERM(10.1.2.3) | stats count by action"
+      },
+      "id": "missing-term-ip",
+      "title": "Sample - Missing TERM for IP"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "APPEND_PROLIFERATION",
+          "SUBSEARCH_RISK"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=app env=prod ERROR | stats count AS errors | append [search index=app env=prod WARN | stats count AS warns] | append [search index=app env=prod INFO | stats count AS infos]"
+      },
+      "demo": {
+        "cron": "*/30 * * * *",
+        "disabled": false,
+        "earliest": "-30m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "Each append re-dispatches a search over the same index \u2014 three reads where one suffices. conditional aggregation over a single OR'd base search reads the data once.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=app env=prod (ERROR OR WARN OR INFO) | stats count(eval(searchmatch(\"ERROR\"))) AS errors\n  count(eval(searchmatch(\"WARN\"))) AS warns\n  count(eval(searchmatch(\"INFO\"))) AS infos"
+      },
+      "id": "multiple-append",
+      "title": "Sample - Multiple Append Pattern"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "NOT_STAR_UNPAREN"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=web sourcetype=access_combined NOT * | stats count by status"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "NOT * combined with an index filter without parentheses evaluates with surprising precedence \u2014 wrong results, no error. Parenthesize, or use inclusion.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined (status=404 OR status=500) | stats count by status"
+      },
+      "id": "not-star-unparenthesized",
+      "title": "Sample - Unparenthesized NOT Star"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "MID_SEARCH_TABLE"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=web | table clientip, status, uri_path | search status=404 | stats count by clientip"
+      },
+      "demo": {
+        "cron": "*/30 * * * *",
+        "disabled": false,
+        "earliest": "-30m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "table mid-pipeline is a transforming command \u2014 it centralizes and strips fields before the filter runs. fields (distributable) trims columns without the barrier; better yet, filter first.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web status=404 | stats count by clientip"
+      },
+      "id": "premature-table",
+      "title": "Sample - Premature Table Command"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "PREMATURE_TRANSFORM"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=web sourcetype=access_combined | stats count by clientip, status | search status=500"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "stats before the status filter transforms the entire candidate set on the search head, then throws most of it away. Filter in the base search first.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined status=500 | stats count by clientip"
+      },
+      "id": "premature-transform",
+      "title": "Sample - Premature Transform"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "MULTIPLE_REX"
+        ],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined | rex \"a=(?<a>\\S+)\" | rex \"b=(?<b>\\S+)\" | rex \"c=(?<c>\\S+)\""
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "Each rex re-reads the source field per event; several in sequence multiply parse passes that one combined pattern would do once (low: cost only).\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined | rex \"a=(?<a>\\S+) b=(?<b>\\S+) c=(?<c>\\S+)\""
+      },
+      "id": "sequential-rex",
+      "title": "Sample - Sequential Rex Commands"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "SORT_BEFORE_TRANSACTION",
+          "TRANSACTION_ABUSE"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=web sourcetype=access_combined | sort 0 _time | transaction clientip maxspan=30m"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "A sort barrier stacked in front of the already-expensive transaction \u2014 two SH-bound buffering passes; usually a smell that stats is the right tool.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined | stats earliest(_time) AS s latest(_time) AS e by clientip"
+      },
+      "id": "sort-before-transaction",
+      "title": "Sample - Sort Before Transaction"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "TSTATS_OPPORTUNITY"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=web | stats count by host, sourcetype"
+      },
+      "demo": {
+        "cron": "0 * * * *",
+        "disabled": false,
+        "earliest": "-60m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "Counting by indexed fields only (host, sourcetype) never needs _raw \u2014 tstats answers from tsidx alone, routinely 10-100x faster.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "| tstats count where index=web by host, sourcetype"
+      },
+      "id": "stats-vs-tstats",
+      "title": "Sample - Stats Instead of Tstats"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "SUBSEARCH_RISK"
+        ],
+        "expected_verdict": "warn",
+        "spl": "index=auth action=failure [search index=threat_intel | fields src_ip] | stats count by src_ip"
+      },
+      "demo": {
+        "cron": "*/10 * * * *",
+        "disabled": false,
+        "earliest": "-10m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "The threat-intel subsearch is re-run on every execution and silently capped at 10k results / 60s. A lookup holds the same IOC set with no cap and no per-run dispatch.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=auth action=failure [| inputlookup threat_intel_iocs | fields src_ip] | stats count by src_ip"
+      },
+      "id": "subsearch-risk",
+      "title": "Sample - Subsearch Risk"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "TRANSACTION_ABUSE"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=web | transaction clientip maxspan=30m | stats avg(duration)"
+      },
+      "demo": {
+        "cron": "0 * * * *",
+        "disabled": false,
+        "earliest": "-60m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "transaction assembles sessions in search-head memory and silently drops events past maxopentxn/maxopenevents. stats computes the same session bounds distributably, with no eviction.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web | stats earliest(_time) AS start latest(_time) AS end BY clientip | eval duration=end-start | stats avg(duration)"
+      },
+      "id": "transaction-overuse",
+      "title": "Sample - Transaction Overuse"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "TSTATS_DM_UNSCOPED"
+        ],
+        "expected_verdict": "warn",
+        "spl": "| tstats count from datamodel=Web by sourcetype"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "tstats over an accelerated data model without an index constraint scans all summary buckets \u2014 \"it uses tstats so it's fast\" is false comfort. Constrain inside where.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "| tstats count from datamodel=Web where index=web by sourcetype"
+      },
+      "id": "tstats-datamodel-unscoped",
+      "title": "Sample - Tstats Datamodel Unscoped"
+    },
+    {
+      "demo": {
+        "cron": "*/30 * * * *",
+        "disabled": false,
+        "earliest": "-4h@h",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "Indexed-fields-only reporting done right: tstats with index scope inside the where clause.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "| tstats count where index=web by host, _time span=1h"
+      },
+      "id": "tstats-host-volume",
+      "title": "Sample - Tstats Host Volume"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "UNBOUNDED_INDEX"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=* error | stats count by host"
+      },
+      "demo": {
+        "cron": "*/15 * * * *",
+        "disabled": false,
+        "earliest": "-15m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "index=* scans every index in the environment. Naming the index turns a platform-wide crawl into a single-index read.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined \"error\" | stats count by host"
+      },
+      "id": "unbounded-index-scan",
+      "title": "Sample - Unbounded Index Scan"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "JOIN_OVERUSE",
+          "SUBSEARCH_RISK"
+        ],
+        "expected_verdict": "blocked",
+        "spl": "index=web | join clientip [search index=firewall] | stats count by action"
+      },
+      "demo": {
+        "cron": "*/20 * * * *",
+        "disabled": false,
+        "earliest": "-20m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "join buffers its subsearch on the search head, capped at 50k rows / 60s \u2014 then truncates silently. A single pass with stats by the common key reads both datasets once and never truncates.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "(index=web) OR (index=firewall) | stats values(action) AS action dc(index) AS sources BY clientip | where sources=2 | stats count by action"
+      },
+      "id": "unbounded-join",
+      "title": "Sample - Unbounded Join"
+    },
+    {
+      "bad": {
+        "expected_codes": [
+          "SORT_DEFAULT_LIMIT"
+        ],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined | stats count by clientip | sort -count | head 20"
+      },
+      "demo": {
+        "install": false
+      },
+      "explanation": "A sort with no explicit count keeps only 10,000 rows and drops the rest before head sees them \u2014 the top-N can be computed on the wrong slice (low).\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=web sourcetype=access_combined | stats count by clientip | sort 20 -count"
+      },
+      "id": "unbounded-sort",
+      "title": "Sample - Unbounded Sort"
+    },
+    {
+      "demo": {
+        "cron": "0 * * * *",
+        "disabled": false,
+        "earliest": "-60m@m",
+        "install": true,
+        "latest": "now"
+      },
+      "explanation": "What good looks like: index + sourcetype + indexed-field filter, early field trim, aggregation last.\n",
+      "good": {
+        "expected_codes": [],
+        "expected_verdict": "approved",
+        "spl": "index=app sourcetype=app_logs log_level=ERROR | fields _time, host, component, message | stats count BY host, component"
+      },
+      "id": "well-scoped-error-report",
+      "title": "Sample - Well Scoped Error Report"
+    }
+  ]
+}

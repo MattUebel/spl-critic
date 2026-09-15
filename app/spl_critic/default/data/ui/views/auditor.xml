@@ -1,0 +1,11 @@
+<dashboard version="1.1" script="auditor.js" hideEdit="true" hideFilters="true" theme="dark">
+  <label>SPL Auditor</label>
+  <description>Every saved search and dashboard, gathered as facts and judged by the agent: ranked worst first, retire candidates named.</description>
+  <row>
+    <panel>
+      <html>
+        <div id="spl-auditor-root">Loading SPL Auditor…</div>
+      </html>
+    </panel>
+  </row>
+</dashboard>

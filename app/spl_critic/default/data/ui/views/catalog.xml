@@ -1,0 +1,11 @@
+<dashboard version="1.1" script="catalog.js" hideEdit="true" hideFilters="true" theme="dark">
+  <label>Knowledgebase</label>
+  <description>Every anti-pattern SPL Critic knows — shipped rules plus this environment's own.</description>
+  <row>
+    <panel>
+      <html>
+        <div id="spl-catalog-root">Loading the rulebook…</div>
+      </html>
+    </panel>
+  </row>
+</dashboard>

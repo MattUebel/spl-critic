@@ -1,0 +1,10 @@
+<dashboard version="1.1" script="home.js" hideEdit="true" hideFilters="true" theme="dark">
+  <label>SPL Critic</label>
+  <row>
+    <panel>
+      <html>
+        <div id="spl-home-root">Loading…</div>
+      </html>
+    </panel>
+  </row>
+</dashboard>

@@ -1,0 +1,24 @@
+[]
+access = read : [ * ], write : [ admin ]
+export = none
+
+[collections/spl_critic_inference]
+access = read : [ * ], write : [ * ]
+export = none
+
+[storage/collections/spl_critic_inference]
+access = read : [ * ], write : [ * ]
+
+[collections/spl_critic_audit_runs]
+access = read : [ * ], write : [ * ]
+export = none
+
+[storage/collections/spl_critic_audit_runs]
+access = read : [ * ], write : [ * ]
+
+[collections/spl_critic_audit_results]
+access = read : [ * ], write : [ * ]
+export = none
+
+[storage/collections/spl_critic_audit_results]
+access = read : [ * ], write : [ * ]

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkspl_critic_ui=self.webpackChunkspl_critic_ui||[]).push([[628],{5628(c,i,s){s.r(i)}}]);

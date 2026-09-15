@@ -1,0 +1,1647 @@
+{
+  "command_types": {
+    "commands": {
+      "accum": {
+        "type": "centralized_streaming"
+      },
+      "addinfo": {
+        "type": "distributable_streaming"
+      },
+      "addtotals": {
+        "note": "transforming when col=true (column totals)",
+        "type": "distributable_streaming"
+      },
+      "append": {
+        "note": "runs an additional subsearch; repeated appends re-scan the base data",
+        "type": "orchestrating"
+      },
+      "appendcols": {
+        "type": "orchestrating"
+      },
+      "appendpipe": {
+        "type": "orchestrating"
+      },
+      "bin": {
+        "type": "distributable_streaming"
+      },
+      "bucket": {
+        "note": "alias of bin",
+        "type": "distributable_streaming"
+      },
+      "chart": {
+        "type": "transforming"
+      },
+      "cluster": {
+        "type": "dataset_processing"
+      },
+      "collect": {
+        "note": "writes to a summary index",
+        "side_effects": true,
+        "type": "transforming"
+      },
+      "contingency": {
+        "type": "transforming"
+      },
+      "convert": {
+        "type": "distributable_streaming"
+      },
+      "datamodel": {
+        "type": "generating"
+      },
+      "dbinspect": {
+        "type": "generating"
+      },
+      "dedup": {
+        "note": "streaming only in limited no-sortby cases; prefer stats latest()/values()",
+        "type": "transforming"
+      },
+      "delete": {
+        "note": "destructive \u2014 always blocked in guarded execution",
+        "side_effects": true,
+        "type": "transforming"
+      },
+      "eval": {
+        "type": "distributable_streaming"
+      },
+      "eventcount": {
+        "type": "generating"
+      },
+      "eventstats": {
+        "note": "holds whole result set in memory on SH",
+        "type": "dataset_processing"
+      },
+      "extract": {
+        "type": "distributable_streaming"
+      },
+      "fieldformat": {
+        "type": "distributable_streaming"
+      },
+      "fields": {
+        "type": "distributable_streaming"
+      },
+      "fillnull": {
+        "note": "dataset_processing when no field list is given (must inspect all events for fields)",
+        "type": "distributable_streaming"
+      },
+      "foreach": {
+        "type": "orchestrating"
+      },
+      "from": {
+        "type": "generating"
+      },
+      "gentimes": {
+        "type": "generating"
+      },
+      "head": {
+        "type": "centralized_streaming"
+      },
+      "highlight": {
+        "type": "distributable_streaming"
+      },
+      "inputcsv": {
+        "type": "generating"
+      },
+      "inputlookup": {
+        "type": "generating"
+      },
+      "join": {
+        "note": "SH-only; right side is a subsearch bound by subsearch_maxout_join (50k) and 60s \u2014 silent truncation risk",
+        "type": "orchestrating"
+      },
+      "kv": {
+        "note": "alias of extract",
+        "type": "distributable_streaming"
+      },
+      "loadjob": {
+        "type": "generating"
+      },
+      "localop": {
+        "note": "forces remainder of pipeline onto the SH",
+        "type": "orchestrating"
+      },
+      "lookup": {
+        "note": "distributable only when the lookup bundle replicates; huge lookups degrade",
+        "type": "distributable_streaming"
+      },
+      "makemv": {
+        "type": "distributable_streaming"
+      },
+      "makeresults": {
+        "type": "generating"
+      },
+      "map": {
+        "note": "spawns one search per input row up to maxsearches \u2014 concurrency storm risk",
+        "type": "orchestrating"
+      },
+      "metadata": {
+        "type": "generating"
+      },
+      "metasearch": {
+        "type": "generating"
+      },
+      "mstats": {
+        "type": "generating"
+      },
+      "multikv": {
+        "type": "distributable_streaming"
+      },
+      "multisearch": {
+        "note": "all branches must be streaming",
+        "type": "generating"
+      },
+      "mvexpand": {
+        "note": "output multiplier; memory-capped by max_mem_usage_mb",
+        "type": "distributable_streaming"
+      },
+      "nomv": {
+        "type": "distributable_streaming"
+      },
+      "noop": {
+        "note": "carries directives, e.g. search_optimization=false for optimizer A/B",
+        "type": "orchestrating"
+      },
+      "outlier": {
+        "type": "dataset_processing"
+      },
+      "outputcsv": {
+        "side_effects": true,
+        "type": "transforming"
+      },
+      "outputlookup": {
+        "side_effects": true,
+        "type": "transforming"
+      },
+      "pivot": {
+        "type": "generating"
+      },
+      "rangemap": {
+        "type": "distributable_streaming"
+      },
+      "rare": {
+        "type": "transforming"
+      },
+      "redistribute": {
+        "type": "orchestrating"
+      },
+      "regex": {
+        "type": "distributable_streaming"
+      },
+      "rename": {
+        "type": "distributable_streaming"
+      },
+      "replace": {
+        "type": "distributable_streaming"
+      },
+      "rest": {
+        "type": "generating"
+      },
+      "reverse": {
+        "type": "dataset_processing"
+      },
+      "rex": {
+        "note": "greedy patterns on _raw are CPU-heavy even though distributable",
+        "type": "distributable_streaming"
+      },
+      "search": {
+        "note": "generating when first in the pipeline",
+        "type": "distributable_streaming"
+      },
+      "sendemail": {
+        "side_effects": true,
+        "type": "transforming"
+      },
+      "sort": {
+        "note": "buffers full input; sort immediately before transaction is a smell",
+        "type": "transforming"
+      },
+      "spath": {
+        "type": "distributable_streaming"
+      },
+      "stats": {
+        "type": "transforming"
+      },
+      "strcat": {
+        "type": "distributable_streaming"
+      },
+      "streamstats": {
+        "type": "centralized_streaming"
+      },
+      "table": {
+        "note": "drops fields and centralizes \u2014 end-of-pipeline only; use fields to trim mid-pipeline",
+        "type": "transforming"
+      },
+      "tags": {
+        "type": "distributable_streaming"
+      },
+      "tail": {
+        "type": "dataset_processing"
+      },
+      "timechart": {
+        "type": "transforming"
+      },
+      "timewrap": {
+        "type": "transforming"
+      },
+      "top": {
+        "type": "transforming"
+      },
+      "transaction": {
+        "note": "memory-bound on SH; maxopentxn/maxopenevents LRU eviction silently drops events; requires descending time order; >90% of uses are better served by stats",
+        "type": "centralized_streaming"
+      },
+      "tstats": {
+        "note": "also usable mid-pipeline (append=t); still needs index/sourcetype scoping under DMA",
+        "type": "generating"
+      },
+      "typer": {
+        "type": "distributable_streaming"
+      },
+      "union": {
+        "note": "prefer over repeated append; can stream when all branches are streaming",
+        "type": "orchestrating"
+      },
+      "untable": {
+        "type": "transforming"
+      },
+      "where": {
+        "type": "distributable_streaming"
+      },
+      "xmlkv": {
+        "type": "distributable_streaming"
+      },
+      "xyseries": {
+        "type": "transforming"
+      }
+    },
+    "description": "SPL command classification for the deterministic critique tier. Types drive pipeline-order checks (e.g. centralized-before-filter). Aligned with Splunk Search Reference 'Commands by type' and knowledge/spl-map-reduce-and-command-types.md.",
+    "types": {
+      "centralized_streaming": "Streaming but must run on the search head in event order. Creates a map-reduce barrier; never place before narrow filters.",
+      "dataset_processing": "Requires the whole dataset before acting (sort-like buffering) but is not stats-shaped.",
+      "distributable_streaming": "Operates on each event independently; runs on indexers in parallel. Safe (and preferred) early in the pipeline.",
+      "generating": "Fetches events/results; only valid as the first command (or after |). Runs on indexers or SH depending on command.",
+      "orchestrating": "Controls how the search executes (subsearches, joins, appends, optimizer directives). Frequent source of hidden cost.",
+      "transforming": "Requires the full input set to produce output rows (stats-like). Runs on the search head; place after filtering."
+    },
+    "version": 1
+  },
+  "limits": {
+    "description": "Platform magic numbers the critique tiers cite. Values are Splunk Enterprise defaults (limits.conf) \u2014 environments may differ; deep analysis should read effective values via REST when available.",
+    "efficiency_bands": {
+      "bands": [
+        {
+          "action": "well scoped",
+          "min": 0.5,
+          "rating": "good"
+        },
+        {
+          "action": "add indexed filters, TERM(), narrow time range",
+          "min": 0.1,
+          "rating": "fair"
+        },
+        {
+          "action": "missing index / sourcetype / indexed field filter",
+          "min": 0.01,
+          "rating": "poor"
+        },
+        {
+          "action": "near full-index scan",
+          "min": 0.0,
+          "rating": "critical"
+        }
+      ],
+      "description": "eventCount/scanCount bands used to grade filtering quality when Job Inspector data is available"
+    },
+    "limits": {
+      "map_maxsearches": {
+        "failure_mode": "raising it multiplies concurrent search load",
+        "related_codes": [
+          "SUBSEARCH_EXPLOSION"
+        ],
+        "source": "map command maxsearches default",
+        "unit": "searches",
+        "value": 10
+      },
+      "max_mem_usage_mb": {
+        "failure_mode": "command output silently limited when the cap is hit",
+        "related_codes": [
+          "HIGH_CARDINALITY_BY"
+        ],
+        "source": "limits.conf [default] max_mem_usage_mb (per-command memory cap, e.g. mvexpand, eventstats)",
+        "unit": "MB",
+        "value": 200
+      },
+      "maxopenevents": {
+        "failure_mode": "LRU eviction of events inside open transactions",
+        "related_codes": [
+          "TRANSACTION_ABUSE"
+        ],
+        "source": "limits.conf [transactions] maxopenevents",
+        "unit": "events",
+        "value": 100000
+      },
+      "maxopentxn": {
+        "failure_mode": "LRU eviction of open transactions \u2014 silently incomplete results",
+        "related_codes": [
+          "TRANSACTION_ABUSE"
+        ],
+        "source": "limits.conf [transactions] maxopentxn",
+        "unit": "open transactions",
+        "value": 5000
+      },
+      "maxresultrows": {
+        "failure_mode": "result sets past the cap are truncated",
+        "related_codes": [
+          "SILENT_TRUNCATION"
+        ],
+        "source": "limits.conf [searchresults] maxresultrows",
+        "unit": "rows",
+        "value": 50000
+      },
+      "scheduler_skip_ratio_alert": {
+        "failure_mode": "skip ratio above 20% in 24h warrants investigation",
+        "related_codes": [
+          "ALLTIME_RANGE"
+        ],
+        "source": "operational guidance \u2014 knowledge/spl-measurement-and-efficiency.md",
+        "unit": "ratio over 24h",
+        "value": 0.2
+      },
+      "subsearch_maxout": {
+        "failure_mode": "silent truncation \u2014 subsearch results beyond the cap are dropped without error",
+        "related_codes": [
+          "SUBSEARCH_RISK",
+          "SILENT_TRUNCATION"
+        ],
+        "source": "limits.conf [subsearch] maxout",
+        "unit": "results",
+        "value": 10000
+      },
+      "subsearch_maxout_join": {
+        "failure_mode": "canonical log message: '50000 results, truncating to maxout'",
+        "related_codes": [
+          "JOIN_OVERUSE",
+          "SILENT_TRUNCATION"
+        ],
+        "source": "join command subsearch context",
+        "unit": "results",
+        "value": 50000
+      },
+      "subsearch_maxtime": {
+        "failure_mode": "subsearch finalized early \u2014 partial input to the outer search",
+        "related_codes": [
+          "SUBSEARCH_RISK",
+          "JOIN_OVERUSE"
+        ],
+        "source": "limits.conf [subsearch] maxtime",
+        "unit": "seconds",
+        "value": 60
+      }
+    },
+    "version": 1
+  },
+  "rules": [
+    {
+      "aliases": [],
+      "canonical_rewrite": "Bound the window (earliest=-24h or the schedule interval); for historical baselines use summary indexing or accelerated data models.\n",
+      "category": "retrieval",
+      "cost_rationale": "All-time scheduled searches rescan the entire retention window every run \u2014 the canonical scheduled-search resource drain called out in Splunk docs.\n",
+      "cost_weight": 85,
+      "detection_signals": {
+        "pipeline_checks": [
+          "saved_search_alltime_window"
+        ],
+        "regexes": [
+          {
+            "pattern": "(?i)\\bearliest\\s*=\\s*(?:0|@0|\"0\")",
+            "scope": "pipeline"
+          },
+          {
+            "pattern": "(?i)\\balltime\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "Optimize indexing and search \u2014 https://help.splunk.com/en/?resourceId=Splunk_Capacity_Summaryofperformancerecommendations",
+      "id": "ALLTIME_RANGE",
+      "job_inspector_confirmation": "runDuration and scanCount grow monotonically over the search's lifetime",
+      "kind": "detector",
+      "name": "All-time search window",
+      "risk_rationale": "Cost grows without bound as data ages in; Cloud admission rules may hard-block, breaking the workflow that depends on the search.\n",
+      "risk_weight": 70,
+      "severity": "critical"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Join on an explicit key instead of position: one base search with `stats ... BY key`, or a `lookup`. Reserve appendcols for genuinely positional, equal-length, identically-ordered sets.\n",
+      "category": "subsearch",
+      "cost_rationale": "appendcols runs its argument as a subsearch (the 50k/60s caps apply) and stitches the columns onto the main results \u2014 another indexer round-trip on top of the base search.\n",
+      "cost_weight": 45,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*appendcols\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "appendcols \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Appendcols",
+      "id": "APPENDCOLS_POSITIONAL",
+      "job_inspector_confirmation": "row counts differ between the main search and the appendcols subsearch",
+      "kind": "detector",
+      "name": "appendcols joins by row position",
+      "risk_rationale": "appendcols matches by ROW POSITION, not a key. If the two result sets are ordered differently or have different lengths, every value lands on the wrong row \u2014 the output is confidently wrong with no error.\n",
+      "risk_weight": 60,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "One base search with OR'd scopes plus stats/eval to separate the branches; union when branches are genuinely different datasets.\n",
+      "category": "resource",
+      "cost_rationale": "Each | append [search ...] dispatches another full search \u2014 typically re-scanning the same indexes the base search already read.\n",
+      "cost_weight": 65,
+      "detection_signals": {
+        "pipeline_checks": [
+          "multiple_append_stages"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "append \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Append",
+      "id": "APPEND_PROLIFERATION",
+      "job_inspector_confirmation": "N dispatched subsearches in search.log for one logical question",
+      "kind": "detector",
+      "name": "Repeated append subsearches",
+      "risk_rationale": "Each append is also a subsearch with the 10k/60s caps and their silent truncation behavior.\n",
+      "risk_weight": 30,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "(index=a cond1) OR (index=a cond2) | stats count(eval(cond1)) AS c1 count(eval(cond2)) AS c2 \u2014 or union for genuinely distinct datasets.\n",
+      "category": "optimization",
+      "cost_rationale": "Appending searches that differ only in a filter re-runs retrieval N times. One base search with OR'd scope plus conditional aggregation (stats count(eval(...))) reads the data once.\n",
+      "cost_weight": 50,
+      "detection_signals": {
+        "pipeline_checks": [
+          "append_same_base_pattern"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "About search optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Aboutoptimization",
+      "id": "APPEND_VS_UNION",
+      "job_inspector_confirmation": "single dispatch replaces N in search.log after rewrite",
+      "kind": "detector",
+      "name": "append chain where one base search serves",
+      "risk_rationale": "Inherits subsearch caps per appended branch.\n",
+      "risk_weight": 20,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Anchor with index, sourcetype, and at least one indexed term before any wildcard.\n",
+      "category": "retrieval",
+      "cost_rationale": "A bare * retrieves everything the platform allows \u2014 no lexicon terms to intersect, no bloom filter elimination.\n",
+      "cost_weight": 80,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "^\\s*\\*\\s*$",
+            "scope": "retrieval"
+          }
+        ]
+      },
+      "doc_citation": "Quick tips for optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Quicktipsforoptimization",
+      "id": "BARE_STAR",
+      "job_inspector_confirmation": "scanCount approaches total events in the time window",
+      "kind": "detector",
+      "name": "Bare * retrieval",
+      "risk_rationale": "Result volume is bounded only by platform limits, so behavior degrades unpredictably as data grows.\n",
+      "risk_weight": 60,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Emitted alongside a detector code; the suggested_spl field carries the concrete rewrite.\n",
+      "category": "subsearch",
+      "cost_rationale": "Remediation umbrella used in critique output when a rewrite exists: stats by common key, lookup for reference data, single base search with OR plus stats, accelerated data model via tstats.\n",
+      "cost_weight": 0,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": []
+      },
+      "doc_citation": "About search optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Aboutoptimization",
+      "id": "BETTER_ALTERNATIVE",
+      "job_inspector_confirmation": "A/B runDuration between original and rewrite",
+      "kind": "advisory",
+      "name": "Cheaper equivalent exists",
+      "risk_rationale": "Advisory only \u2014 carries the rewrite suggestion, not a finding of its own.\n",
+      "risk_weight": 0,
+      "severity": "info"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Match the window to the question; for scheduled searches, size earliest to the schedule interval plus a safety margin.\n",
+      "category": "retrieval",
+      "cost_rationale": "I/O scales linearly with the time window. A -30d window when -24h answers the question is a 30x multiplier on every downstream cost.\n",
+      "cost_weight": 25,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\bearliest\\s*=\\s*-?(?:[3-9]\\d|\\d{3,})d\\b",
+            "scope": "retrieval"
+          }
+        ]
+      },
+      "doc_citation": "Optimize indexing and search \u2014 https://help.splunk.com/en/?resourceId=Splunk_Capacity_Summaryofperformancerecommendations",
+      "id": "BROAD_TIME_RANGE",
+      "job_inspector_confirmation": "runDuration scales with window; scanCount spread across many buckets",
+      "kind": "detector",
+      "name": "Broader time range than needed",
+      "risk_rationale": "Long windows on scheduled searches push runDuration toward the cron interval \u2014 the self-overlap skip pattern.\n",
+      "risk_weight": 15,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Drive collect from a single, non-overlapping scheduled search; never backfill by re-running it ad hoc over a window already summarized. Prefer data-model acceleration where it fits.\n",
+      "category": "side_effect",
+      "cost_rationale": "collect writes results into a summary index \u2014 legitimate for scheduled summary indexing, but it has no dedup intelligence.\n",
+      "cost_weight": 20,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*collect\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "collect \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Collect",
+      "id": "COLLECT_DUPLICATION",
+      "job_inspector_confirmation": "duplicate rows in the target summary index for the same source _time",
+      "kind": "detector",
+      "name": "collect duplicates the summary index on re-run",
+      "risk_rationale": "Re-running collect over a source/time range it already summarized duplicates every row (community reports of >100x inflation), and it uses the original _time so duplicates scatter historically \u2014 every downstream report built on the summary is silently inflated. Safe only when scheduled once per non-overlapping window.\n",
+      "risk_weight": 25,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Anchor patterns, replace .* with bounded or negated classes ([^\"]*), and extract once into fields rather than re-matching.\n",
+      "category": "resource",
+      "cost_rationale": "Multiple .* in one pattern forces backtracking across full _raw for every event \u2014 CPU cost that distributable placement cannot hide.\n",
+      "cost_weight": 55,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*rex\\b[^|]*\\.\\*.*\\.\\*",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "rex \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Rex",
+      "id": "COMPLEX_REGEX",
+      "job_inspector_confirmation": "command.rex phase time disproportionate to event volume",
+      "kind": "detector",
+      "name": "Greedy regex over _raw",
+      "risk_rationale": "Pathological backtracking can dominate a search's CPU on hostile input.\n",
+      "risk_weight": 20,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "| stats latest(status) AS status latest(_time) AS _time BY host \u2014 instead of | dedup host.\n",
+      "category": "optimization",
+      "cost_rationale": "dedup keeps arbitrary representatives unless paired with sortby (its non-streaming, expensive mode). stats latest()/values() by key states the intent and aggregates distributably where possible.\n",
+      "cost_weight": 45,
+      "detection_signals": {
+        "pipeline_checks": [
+          "dedup_without_sortby"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "dedup \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Dedup",
+      "id": "DEDUP_VS_STATS",
+      "job_inspector_confirmation": "dedup phase cost; result instability across runs",
+      "kind": "detector",
+      "name": "dedup where stats latest()/values() serves",
+      "risk_rationale": "Without sortby, WHICH event survives dedup is order-dependent \u2014 subtly nondeterministic results.\n",
+      "risk_weight": 25,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Do not delete from a scheduled or ad-hoc search. To remove data use index retention (frozenTimePeriodInSecs) or `splunk clean` on a rebuildable index; to hide a subset, fix the upstream filter \u2014 never delete.\n",
+      "category": "side_effect",
+      "cost_rationale": "delete marks events unsearchable across the whole environment; it does NOT reclaim disk \u2014 the data stays on disk, just hidden from every search.\n",
+      "cost_weight": 10,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*delete\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "delete \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Delete",
+      "id": "DELETE_COMMAND",
+      "job_inspector_confirmation": "delete operations in the _audit index; events vanish from search with disk usage unchanged",
+      "kind": "detector",
+      "name": "delete is irreversible and frees no disk",
+      "risk_rationale": "Irreversible: recovery means re-indexing the source. A too-broad base search silently masks huge swaths of data from all users. A flagged risky command gated behind the can_delete role \u2014 its presence in a saved search warrants review every single time.\n",
+      "risk_weight": 95,
+      "severity": "critical"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Use earliest/latest with relative units and snapping: daysago=7 becomes earliest=-7d@d latest=now; searchtimespanhours=1 becomes a matched earliest/latest pair.\n",
+      "category": "retrieval",
+      "cost_rationale": "Legacy modifiers (daysago=, startminutesago=, searchtimespanhours=, starttimeu=) are documented as valid but slated for removal, and each is a slower, less flexible path than the relative-time syntax.\n",
+      "cost_weight": 10,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\b(?:(?:start|end)?(?:days|hours|minutes|months)ago|searchtimespan(?:days|hours|minutes|months)|(?:start|end)timeu)\\s*=",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "Time modifiers \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_SearchTimeModifiers",
+      "id": "DEPRECATED_TIME_MODIFIER",
+      "job_inspector_confirmation": "deprecation notices in search.log; the same window expressed two ways",
+      "kind": "detector",
+      "name": "Deprecated time modifier",
+      "risk_rationale": "Removal risk: a future release drops them and the saved search silently breaks. Correctness-adjacent \u2014 they express windows less precisely than snap-aware earliest/latest.\n",
+      "risk_weight": 10,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Move every distributable filter (search terms, where, fields) ahead of the first centralized command; often the centralized command itself can become stats.\n",
+      "category": "pipeline",
+      "cost_rationale": "Centralized streaming commands (transaction, head, streamstats) force all events matched so far onto the search head. Placed before narrow filters, the SH holds an unscoped event set \u2014 the map-reduce model inverted.\n",
+      "cost_weight": 75,
+      "detection_signals": {
+        "pipeline_checks": [
+          "centralized_before_filter"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "About search optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Aboutoptimization",
+      "id": "EARLY_CENTRALIZED",
+      "job_inspector_confirmation": "high dispatch.stream.remote (bytes shipped to SH) relative to resultCount",
+      "kind": "detector",
+      "name": "Centralized command before filtering",
+      "risk_rationale": "Search head memory pressure affects every user on the SH, not just the offending search.\n",
+      "risk_weight": 60,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Reduce the set before the windowed stat (filter early, `fields` down), or use `stats` (which spills to disk) when a global aggregate \u2014 not a per-event running value \u2014 is what you actually need.\n",
+      "category": "resource",
+      "cost_rationale": "Both buffer aggregation state on the search head across the whole result set \u2014 centralized, not distributable to the indexers.\n",
+      "cost_weight": 30,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*(?:eventstats|streamstats)\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "eventstats \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Eventstats",
+      "id": "EVENTSTATS_MEMORY",
+      "job_inspector_confirmation": "computed eventstats/streamstats field absent on a fraction of rows",
+      "kind": "detector",
+      "name": "eventstats/streamstats drop columns at the memory cap",
+      "risk_rationale": "At max_mem_usage_mb (default 200 MB for these) the processor STOPS adding the computed fields to results rather than spilling to disk the way stats does \u2014 the column silently goes missing on large sets.\n",
+      "risk_weight": 20,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Express what you DO want: enumerate the included values, or filter after retrieval with | where when exclusion is genuinely needed.\n",
+      "category": "retrieval",
+      "cost_rationale": "Exclusion (NOT field=x, field!=x) cannot use the lexicon the way inclusion can \u2014 Splunk still retrieves candidates and discards them.\n",
+      "cost_weight": 45,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\bNOT\\s+\\w+\\s*=",
+            "scope": "retrieval"
+          },
+          {
+            "pattern": "\\w+\\s*!=\\s*\\S+",
+            "scope": "retrieval"
+          }
+        ]
+      },
+      "doc_citation": "Quick tips for optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Quicktipsforoptimization",
+      "id": "EXCLUSION_PATTERN",
+      "job_inspector_confirmation": "scanCount well above what the inclusion form scans",
+      "kind": "detector",
+      "name": "Exclusion filter in base search",
+      "risk_rationale": "!= also drops events where the field is absent, which is frequently not what the author intended.\n",
+      "risk_weight": 20,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Filter on indexed fields first; trim with fields; consider indexed extractions for hot sourcetypes.\n",
+      "category": "evidence",
+      "cost_rationale": "High command.search.kv means the search pays per-event extraction cost (KV_MODE, search-time props) across the scanned set \u2014 often alongside missing early filters.\n",
+      "cost_weight": 55,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": []
+      },
+      "doc_citation": "View search job properties \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_ViewsearchjobpropertieswiththeJobInspector",
+      "id": "HEAVY_KV",
+      "job_inspector_confirmation": "command.search.kv dominates phase timings",
+      "kind": "evidence",
+      "name": "Heavy search-time field extraction",
+      "risk_rationale": "Cost signal only.\n",
+      "risk_weight": 15,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Scope the search so fewer events flow through enrichment; disable unneeded automatic lookups; enrich after aggregation where possible.\n",
+      "category": "evidence",
+      "cost_rationale": "High command.search.lookups means automatic lookups are applied to every event scanned \u2014 large lookup files multiply the effect.\n",
+      "cost_weight": 55,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": []
+      },
+      "doc_citation": "View search job properties \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_ViewsearchjobpropertieswiththeJobInspector",
+      "id": "HEAVY_LOOKUPS",
+      "job_inspector_confirmation": "command.search.lookups dominates phase timings",
+      "kind": "evidence",
+      "name": "Heavy automatic lookup enrichment",
+      "risk_rationale": "Cost signal only.\n",
+      "risk_weight": 15,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Constrain eventtype definitions; avoid tag= filters over broad scopes; filter on indexed terms first.\n",
+      "category": "evidence",
+      "cost_rationale": "High command.search.typer means eventtype and tag evaluation is applied per event \u2014 environments with many broad eventtypes pay this on every search that touches them.\n",
+      "cost_weight": 50,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": []
+      },
+      "doc_citation": "View search job properties \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_ViewsearchjobpropertieswiththeJobInspector",
+      "id": "HEAVY_TYPER",
+      "job_inspector_confirmation": "command.search.typer dominates phase timings",
+      "kind": "evidence",
+      "name": "Heavy eventtype/tag annotation",
+      "risk_rationale": "Cost signal only.\n",
+      "risk_weight": 10,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Aggregate by the dimension you actually report on; bucket continuous values first (bin); use estdc() for distinct counts.\n",
+      "category": "resource",
+      "cost_rationale": "stats ... by a near-unique field builds one bucket per event \u2014 SH memory scales with cardinality and renders crawl.\n",
+      "cost_weight": 65,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\bby\\s+[^|]*\\b(_raw|session_?id|uri|url|guid|uuid|request_?id)\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "stats \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Stats",
+      "id": "HIGH_CARDINALITY_BY",
+      "job_inspector_confirmation": "stats phase memory; result rows near input events",
+      "kind": "detector",
+      "name": "Aggregation by ultra-high-cardinality field",
+      "risk_rationale": "Commands capped by max_mem_usage_mb silently limit output when the bucket table exceeds the cap.\n",
+      "risk_weight": 45,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Widen to */5 or more; if near-real-time latency is a hard requirement, consider an accelerated data model or streaming-style detection instead.\n",
+      "category": "schedule",
+      "cost_rationale": "A */1 cron occupies a scheduler slot 1,440 times a day; few detections genuinely need sub-5-minute latency, and dense schedules crowd out every other search on the host.\n",
+      "cost_weight": 55,
+      "detection_signals": {
+        "pipeline_checks": [
+          "schedule_hyperactive"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Scheduler and concurrency \u2014 https://help.splunk.com/en/?resourceId=Splunk_Report_Configurethepriorityofscheduledreports",
+      "id": "HYPERACTIVE_SCHEDULE",
+      "job_inspector_confirmation": "scheduler concurrency and skip events while active",
+      "kind": "detector",
+      "name": "Every-minute schedule",
+      "risk_rationale": "Any runtime hiccup immediately self-overlaps; skip storms follow.\n",
+      "risk_weight": 45,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Restructure as a single pass: (index=a) OR (index=b) | stats values(...) by join_key \u2014 or use lookup for reference data.\n",
+      "category": "subsearch",
+      "cost_rationale": "join is SH-only and runs its right side as a subsearch \u2014 capped at 50k rows (subsearch_maxout join context) and 60s (subsearch_maxtime). SQL habits port badly: Splunk joins buffer and match on the search head.\n",
+      "cost_weight": 70,
+      "detection_signals": {
+        "pipeline_checks": [
+          "join_unbounded"
+        ],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*join\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "join \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Join",
+      "id": "JOIN_OVERUSE",
+      "job_inspector_confirmation": "subsearch finalization messages in search.log; right-side result count at exactly the cap",
+      "kind": "detector",
+      "name": "join with unbounded subsearch",
+      "risk_rationale": "Past the caps Splunk truncates silently \u2014 the canonical log line is \"50000 results, truncating to maxout\". The join completes, the answer is wrong, nobody is told.\n",
+      "risk_weight": 75,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Move each predicate to the earliest stage where its fields exist; only predicates on derived fields stay after the eval that derives them.\n",
+      "category": "pipeline",
+      "cost_rationale": "A search/where predicate that only references fields available earlier could have dropped rows before they were transformed or shipped to the SH. The canonical example: | lookup | eval | search A=25 L>100 \u2014 A=25 belongs in the base search, L>100 right after the lookup.\n",
+      "cost_weight": 55,
+      "detection_signals": {
+        "pipeline_checks": [
+          "filter_after_transform_movable"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Quick tips for optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Quicktipsforoptimization",
+      "id": "LATE_FILTER",
+      "job_inspector_confirmation": "optimizer A/B (search_optimization=false) shows pushdown gain; residual gap is the movable predicate",
+      "kind": "detector",
+      "name": "Movable filter placed late in the pipeline",
+      "risk_rationale": "Low correctness risk; wasted compute and latency.\n",
+      "risk_weight": 20,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Anchor the term: status=fail* instead of *fail*; exact terms or TERM() for tokens; lookup/inputlookup for large ID sets.\n",
+      "category": "retrieval",
+      "cost_rationale": "Leading wildcards (*fail, field=*value) bypass the tsidx lexicon AND bloom filters \u2014 every term in every bucket must be examined. Trailing wildcards (fail*) can still enumerate the lexicon.\n",
+      "cost_weight": 85,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?<![\\w*])\\*\\w+",
+            "scope": "retrieval"
+          },
+          {
+            "pattern": "(?i)[\\w]+\\s*=\\s*\"?\\*[^\\s\"|\\]]+",
+            "scope": "retrieval"
+          }
+        ]
+      },
+      "doc_citation": "Quick tips for optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Quicktipsforoptimization",
+      "id": "LEADING_WILDCARD",
+      "job_inspector_confirmation": "huge scanCount with tiny resultCount (efficiency band poor/critical)",
+      "kind": "detector",
+      "name": "Leading wildcard",
+      "risk_rationale": "Forces the search from dense toward super-sparse on the density spectrum; a single leading-wildcard search can dominate indexer I/O.\n",
+      "risk_weight": 80,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Move the lookup after the transforming command when its output is not part of the group-by or aggregation: ... | stats count by <key> | lookup ... <key> OUTPUT <fields>.\n",
+      "category": "optimization",
+      "cost_rationale": "A lookup runs per event on every row that reaches it. When its output fields are not used by the following transforming command, the enrichment could run AFTER the aggregation \u2014 matching a handful of grouped rows instead of every raw event.\n",
+      "cost_weight": 55,
+      "detection_signals": {
+        "pipeline_checks": [
+          "lookup_before_aggregation"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "lookup \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Lookup",
+      "id": "LOOKUP_BEFORE_AGG",
+      "job_inspector_confirmation": "command.search.lookups events count equals raw input, not grouped rows",
+      "kind": "detector",
+      "name": "lookup enrichment before aggregation",
+      "risk_rationale": "Cost only. Splunk's own lookup docs give the canonical example: ... | stats count by status | lookup status_desc status OUTPUT description beats doing the lookup before the stats.\n",
+      "risk_weight": 15,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Expand the search to audit it fully \u2014 Search preview (Cmd/Ctrl-Shift-E) or `splunk btool macros list` \u2014 then re-run the critique on the expanded SPL.\n",
+      "category": "coverage",
+      "cost_rationale": "Macros expand before the search runs; SPL Critic analyzes the TEXT, so it cannot see inside a `macro` call. A macro can hide any anti-pattern \u2014 index=*, all-time, leading wildcards, join, or summariesonly=false (the ES security_content_summariesonly case expands to raw-data scans through two layers of macro).\n",
+      "cost_weight": 0,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "`[A-Za-z0-9_]+(?:\\([^`]*\\))?`",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "Use search macros \u2014 https://help.splunk.com/en/?resourceId=Splunk_Knowledge_Usesearchmacros",
+      "id": "MACRO_OPACITY",
+      "job_inspector_confirmation": "the expanded search string in Job Inspector differs from the typed SPL",
+      "kind": "detector",
+      "name": "Search calls macros the critic cannot see inside",
+      "risk_rationale": "Not a defect \u2014 an audit-coverage gap. A clean verdict on a macro-heavy search is only as complete as the macros are benign.\n",
+      "risk_weight": 5,
+      "severity": "info"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Use | fields to trim columns mid-pipeline (distributable); reserve table for the final display stage.\n",
+      "category": "pipeline",
+      "cost_rationale": "table is transforming \u2014 it centralizes rows and drops fields mid-flight. Downstream commands then run on the SH against a format meant for display.\n",
+      "cost_weight": 60,
+      "detection_signals": {
+        "pipeline_checks": [
+          "table_not_terminal"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Commands by type \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Commandsbytype",
+      "id": "MID_SEARCH_TABLE",
+      "job_inspector_confirmation": "pipeline stages after table all execute on the SH",
+      "kind": "detector",
+      "name": "table in mid-pipeline",
+      "risk_rationale": "Dropped fields silently break downstream lookups/evals that expected them.\n",
+      "risk_weight": 30,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Match whole segments or use TERM() for exact tokens containing punctuation; split the filter into anchored parts.\n",
+      "category": "retrieval",
+      "cost_rationale": "Wildcards spanning punctuation (host=sh-*splunkcloud*) fight the segmenter: Splunk indexes segments split on punctuation, so matching costs more.\n",
+      "cost_weight": 75,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "[\\w]+\\*[\\w.-]*[.:/_-][\\w.-]*",
+            "scope": "retrieval"
+          }
+        ]
+      },
+      "doc_citation": "Quick tips for optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Quicktipsforoptimization",
+      "id": "MID_TOKEN_WILDCARD",
+      "job_inspector_confirmation": "unexpected result membership; elevated command.search.index",
+      "kind": "detector",
+      "name": "Mid-token wildcard across punctuation",
+      "risk_rationale": "Correctness hazard, not just cost \u2014 segment boundaries mean mid-token wildcards can silently match differently than intended.\n",
+      "risk_weight": 70,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Set realtime_schedule=0 (continuous schedule) so missed windows are evaluated late rather than never; then fix the cause of the skips (self-overlap or scheduler pressure).\n",
+      "category": "schedule",
+      "cost_rationale": "Cost is not the issue \u2014 coverage is. With realtime_schedule=1 (the default), a skipped run's time window is never evaluated at all.\n",
+      "cost_weight": 30,
+      "detection_signals": {
+        "pipeline_checks": [
+          "schedule_missed_alert_windows"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "realtime_schedule \u2014 https://help.splunk.com/en/?resourceId=Splunk_Admin_savedsearchesconf",
+      "id": "MISSED_ALERT_WINDOWS",
+      "job_inspector_confirmation": "scheduler log: status=skipped rows for this search while alert_actions configured",
+      "kind": "detector",
+      "name": "Alert skipping evaluation windows",
+      "risk_rationale": "An alert with actions that has skipped runs has silent detection gaps: events in those windows were never inspected, and nothing tells the owner. The most dangerous failure mode a scheduled alert has.\n",
+      "risk_weight": 85,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Add | fields keep-list immediately after retrieval (fields is distributable streaming, so it runs on the indexers).\n",
+      "category": "pipeline",
+      "cost_rationale": "Without | fields, every extracted column ships indexers \u2192 SH for every surviving event, whether or not anything downstream uses it.\n",
+      "cost_weight": 40,
+      "detection_signals": {
+        "pipeline_checks": [
+          "no_early_fields"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Quick tips for optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Quicktipsforoptimization",
+      "id": "MISSING_FIELDS",
+      "job_inspector_confirmation": "dispatch.stream.remote bytes shrink when fields is added",
+      "kind": "detector",
+      "name": "No early field trimming",
+      "risk_rationale": "None \u2014 pure bandwidth/memory overhead.\n",
+      "risk_weight": 10,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Add sourcetype= (and source=/host= where meaningful) to the retrieval stage.\n",
+      "category": "retrieval",
+      "cost_rationale": "An index filter alone pulls every event class in that index; sourcetype narrows the lexicon walk and downstream field extraction.\n",
+      "cost_weight": 40,
+      "detection_signals": {
+        "pipeline_checks": [
+          "retrieval_missing_sourcetype"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Quick tips for optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Quicktipsforoptimization",
+      "id": "MISSING_SOURCETYPE",
+      "job_inspector_confirmation": "eventCount well above what the target sourcetype alone would return",
+      "kind": "detector",
+      "name": "Index without sourcetype scope",
+      "risk_rationale": "Extra event classes can also skew results (fields with the same name across sourcetypes).\n",
+      "risk_weight": 20,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Wrap exact punctuated tokens in TERM(): TERM(10.0.0.1), TERM(user@host).\n",
+      "category": "retrieval",
+      "cost_rationale": "High-cardinality exact tokens containing minor segmenters (IPs, GUIDs) match faster as TERM(10.0.0.1) \u2014 one lexicon term instead of a segment intersection.\n",
+      "cost_weight": 35,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?<!TERM\\()\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b",
+            "scope": "retrieval"
+          }
+        ]
+      },
+      "doc_citation": "Use CASE and TERM \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_UseCASEandTERMtomatchphrases",
+      "id": "MISSING_TERM_DIRECTIVE",
+      "job_inspector_confirmation": "command.search.index drops when TERM() is applied to the same search",
+      "kind": "detector",
+      "name": "Exact token without TERM()",
+      "risk_rationale": "Low risk; purely an efficiency opportunity.\n",
+      "risk_weight": 10,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Combine into one rex with multiple named groups, or promote stable extractions into props.conf/transforms.conf.\n",
+      "category": "resource",
+      "cost_rationale": "Each rex re-reads the source field per event; several in sequence multiply parse passes that one combined pattern (or props-based extraction) would do once.\n",
+      "cost_weight": 45,
+      "detection_signals": {
+        "pipeline_checks": [
+          "multiple_rex_stages"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "rex \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Rex",
+      "id": "MULTIPLE_REX",
+      "job_inspector_confirmation": "command.rex appears repeatedly in phase timings",
+      "kind": "detector",
+      "name": "Sequential rex commands",
+      "risk_rationale": "Low \u2014 cost only.\n",
+      "risk_weight": 15,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Drop unused fields (especially _raw) before expanding: `... | fields - _raw | mvexpand <field>`, so the chunk stays under the cap.\n",
+      "category": "resource",
+      "cost_rationale": "mvexpand holds the entire expanded chunk in search-head memory; carrying _raw along multiplies the footprint per output row.\n",
+      "cost_weight": 30,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*mvexpand\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "mvexpand \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Mvexpand",
+      "id": "MVEXPAND_MEMORY",
+      "job_inspector_confirmation": "'mvexpand output will be truncated' warning in search.log",
+      "kind": "detector",
+      "name": "mvexpand truncates at the memory cap",
+      "risk_rationale": "On overflow of max_mem_usage_mb (default 500 MB) mvexpand TRUNCATES the chunk and emits only a warning \u2014 the search succeeds with missing rows.\n",
+      "risk_weight": 25,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Use the documented indexed field for the sourcetype (props.conf / CIM), or add an indexed term alongside the extracted-field filter.\n",
+      "category": "retrieval",
+      "cost_rationale": "When an indexed (or default) field exists, filtering on the search-time equivalent forces _raw reads and extraction across more buckets.\n",
+      "cost_weight": 50,
+      "detection_signals": {
+        "pipeline_checks": [
+          "non_indexed_filter_candidate"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "About indexed field extraction \u2014 https://help.splunk.com/en/?resourceId=Splunk_Data_Aboutindexedfieldextraction",
+      "id": "NON_INDEXED_FILTER",
+      "job_inspector_confirmation": "high command.search.kv relative to command.search.index",
+      "kind": "detector",
+      "name": "Filtering on non-indexed form of an indexed field",
+      "risk_rationale": "Low correctness risk; cost and latency only.\n",
+      "risk_weight": 20,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Parenthesize: index=x (NOT *pattern*) \u2014 or better, replace the negation with an inclusion filter.\n",
+      "category": "retrieval",
+      "cost_rationale": "Minor cost impact; this is primarily a correctness trap.\n",
+      "cost_weight": 30,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)(?<!\\()\\bNOT\\s+\\*",
+            "scope": "retrieval"
+          }
+        ]
+      },
+      "doc_citation": "Quick tips for optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Quicktipsforoptimization",
+      "id": "NOT_STAR_UNPAREN",
+      "job_inspector_confirmation": "result set differs from the parenthesized form of the same search",
+      "kind": "detector",
+      "name": "Unparenthesized NOT *",
+      "risk_rationale": "NOT * combined with index= or other filters without parentheses evaluates with surprising precedence \u2014 wrong results, no error.\n",
+      "risk_weight": 85,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "For reports that tolerate flexible timing: schedule_window=auto and/or allow_skew=5m; reserve exact-time slots for searches that need them.\n",
+      "category": "schedule",
+      "cost_rationale": "Non-alert reports that demand exact-time execution (allow_skew=0, no schedule_window) pile onto the same minute slots and crowd the scheduler \u2014 the thundering-herd ingredient.\n",
+      "cost_weight": 35,
+      "detection_signals": {
+        "pipeline_checks": [
+          "schedule_no_courtesy"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "schedule_window \u2014 https://help.splunk.com/en/?resourceId=Splunk_Report_Schedulereports",
+      "id": "NO_SCHEDULE_COURTESY",
+      "job_inspector_confirmation": "minute-slot histogram peak vs scheduler concurrency limit",
+      "kind": "detector",
+      "name": "Frequent search without skew or schedule window",
+      "risk_rationale": "Contention it causes skips OTHER searches, including alerts.\n",
+      "risk_weight": 15,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "For large or often-updated tables, write to a KV Store collection instead of a CSV (not bundle-replicated by default); keep CSV lookups small and rarely written; consider `override_if_empty=false` to avoid clobbering.\n",
+      "category": "side_effect",
+      "cost_rationale": "A CSV lookup table lives on the search head and is replicated to every indexer inside the knowledge bundle \u2014 and by default the whole table is re-sent each time any part of it changes. A large or frequently-written CSV bloats every search's bundle replication. (A KV Store target avoids this.)\n",
+      "cost_weight": 30,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*outputlookup\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "outputlookup \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Outputlookup",
+      "id": "OUTPUTLOOKUP_BLOAT",
+      "job_inspector_confirmation": "bundle replication size/elapsed grows after the CSV is written",
+      "kind": "detector",
+      "name": "outputlookup writes a bundle-replicated CSV",
+      "risk_rationale": "outputlookup is a flagged risky command (it can overwrite or lose data). Advisory: the CSV size is not visible in the SPL text, so this never blocks \u2014 most outputlookups are small and fine.\n",
+      "risk_weight": 15,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Fix the search structure (see its SPL findings \u2014 usually missing indexed filters, leading wildcards, or raw-data scans that tstats would answer); the window itself is fine, the search is slow for its size.\n",
+      "category": "schedule",
+      "cost_rationale": "The search spends more wall-clock running than the span of data it examines \u2014 e.g. it reads 5 minutes of events but takes 10 minutes to finish. A pure inefficiency signal: the work is dominated by how the search is written, not by how much time it covers.\n",
+      "cost_weight": 70,
+      "detection_signals": {
+        "pipeline_checks": [
+          "schedule_overrun_range"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Optimizing search \u2014 https://lantern.splunk.com/Platform_Data_Management/Transform_Data/Optimizing_search",
+      "id": "OVERRUN_RANGE",
+      "job_inspector_confirmation": "scheduler run_time vs (latest-earliest) dispatch span",
+      "kind": "detector",
+      "name": "Runtime exceeds the time span searched",
+      "risk_rationale": "Runtime longer than the window makes self-overlap likely on any frequent schedule and wastes a scheduler slot for the whole duration.\n",
+      "risk_weight": 20,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Filter first: push search/where clauses before the transform; aggregate the smallest set that answers the question.\n",
+      "category": "pipeline",
+      "cost_rationale": "stats/sort/dedup are barriers: every event produced so far must arrive before they emit a row. Transforming the full candidate set then filtering the output wastes the whole difference.\n",
+      "cost_weight": 65,
+      "detection_signals": {
+        "pipeline_checks": [
+          "transform_before_filter"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "About search optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Aboutoptimization",
+      "id": "PREMATURE_TRANSFORM",
+      "job_inspector_confirmation": "eventCount into the transform far exceeds rows out",
+      "kind": "detector",
+      "name": "Transforming command before adequate filtering",
+      "risk_rationale": "Barrier commands lengthen runDuration \u2014 scheduled searches drift toward self-overlap.\n",
+      "risk_weight": 40,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Use historical relative-time bounds sized to the schedule (e.g. a */5 cron with earliest=-6m@m latest=now). If you truly need sub-second latency, an accelerated data model or an ingest-time pipeline scales where a standing real-time search does not.\n",
+      "category": "schedule",
+      "cost_rationale": "A real-time dispatch window (rt- earliest / rt latest) runs a continuous search that holds a dedicated pipeline for as long as it lives \u2014 far more expensive than a periodic historical search, and it draws against the separate real-time search quota.\n",
+      "cost_weight": 75,
+      "detection_signals": {
+        "pipeline_checks": [
+          "schedule_realtime_dispatch"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "About real-time searches and reports \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Aboutrealtimesearches",
+      "id": "REALTIME_DISPATCH",
+      "job_inspector_confirmation": "dispatch.earliest_time/latest_time begins with rt; real-time search count in the scheduler",
+      "kind": "detector",
+      "name": "Real-time dispatch on a scheduled search",
+      "risk_rationale": "\"Scheduled\" and \"real-time\" are contradictory intents: the search either runs continuously (pinning a slot the cron never releases) or its rt window is meaningless for a periodic run. Almost always a habit carried over from ad-hoc real-time searches, not a deliberate choice.\n",
+      "risk_weight": 55,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Make the search faster (see its SPL findings) or widen the interval to comfortably exceed p95 runtime.\n",
+      "category": "schedule",
+      "cost_rationale": "Average runtime longer than the cron interval means every run collides with the next \u2014 the search occupies its slot continuously.\n",
+      "cost_weight": 60,
+      "detection_signals": {
+        "pipeline_checks": [
+          "schedule_self_overlap"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Scheduler skew and concurrency \u2014 https://help.splunk.com/en/?resourceId=Splunk_Report_Schedulereports",
+      "id": "SELF_OVERLAP",
+      "job_inspector_confirmation": "scheduler avg run_time vs cron interval; skip reason cites max_concurrent",
+      "kind": "detector",
+      "name": "Runtime exceeds schedule interval",
+      "risk_rationale": "Guaranteed per-search max_concurrent skips: the schedule silently degrades to \"whenever the previous run finishes\".\n",
+      "risk_weight": 70,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Eliminate the pattern that can truncate (see JOIN_OVERUSE / SUBSEARCH_RISK rewrites); where a cap is genuinely acceptable, assert it explicitly with head and document why.\n",
+      "category": "subsearch",
+      "cost_rationale": "The cost is mostly already paid \u2014 this code is about the answer being wrong.\n",
+      "cost_weight": 30,
+      "detection_signals": {
+        "pipeline_checks": [
+          "subsearch_expected_large"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "About subsearches \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Aboutsubsearches",
+      "id": "SILENT_TRUNCATION",
+      "job_inspector_confirmation": "'truncating to maxout' messages in search.log",
+      "kind": "detector",
+      "name": "Result set silently truncated",
+      "risk_rationale": "Truncation at subsearch_maxout / maxresultrows produces confidently wrong results. In an alerting search this means missed detections, not slowness.\n",
+      "risk_weight": 85,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Replace the pair with stats aggregation by the transaction key; if transaction is genuinely required, let it consume index order directly.\n",
+      "category": "resource",
+      "cost_rationale": "sort is a full-dataset barrier stacked in front of the already-expensive transaction \u2014 two SH-bound buffering passes back to back.\n",
+      "cost_weight": 55,
+      "detection_signals": {
+        "pipeline_checks": [
+          "sort_immediately_before_transaction"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "transaction \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Transaction",
+      "id": "SORT_BEFORE_TRANSACTION",
+      "job_inspector_confirmation": "two consecutive SH-phase spikes (sort buffer, then transaction assembly)",
+      "kind": "detector",
+      "name": "sort immediately before transaction",
+      "risk_rationale": "Usually a symptom: the author is fighting transaction's ordering requirement, a strong smell that stats is the right tool.\n",
+      "risk_weight": 40,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "State the bound: `sort 0 <field>` keeps everything (accepting the memory cost), `sort <N> <field>` takes an explicit top-N. Never rely on the implicit 10,000 default.\n",
+      "category": "resource",
+      "cost_rationale": "sort is a full-dataset barrier on the search head \u2014 the whole set is buffered before anything is emitted.\n",
+      "cost_weight": 15,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*sort\\s+(?![0-9])",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "sort \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Sort",
+      "id": "SORT_DEFAULT_LIMIT",
+      "job_inspector_confirmation": "result count pinned at exactly 10000 at the sort stage",
+      "kind": "detector",
+      "name": "Unbounded sort truncates at 10,000",
+      "risk_rationale": "A sort with no explicit count defaults to 10,000 results and silently discards the rest BEFORE downstream commands see them \u2014 a top-N over a larger set is computed on the wrong 10k, with no error. Harmless under 10k rows, wrong above it.\n",
+      "risk_weight": 30,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Decide whether the search matters. If it does, raise schedule_priority or move it off the contended minute (schedule_window=auto / allow_skew) so it stops colliding with the herd. If it does not, disable it. Either way, stop paying for a schedule that mostly never runs.\n",
+      "category": "schedule",
+      "cost_rationale": "The waste is inverted: a starved search barely consumes I/O because it is mostly being skipped. You are paying for a detection or report that rarely executes, and the slots it does win are spent losing races against the herd.\n",
+      "cost_weight": 15,
+      "detection_signals": {
+        "pipeline_checks": [
+          "schedule_starved"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Configure the priority of scheduled reports \u2014 https://help.splunk.com/en/?resourceId=Splunk_Report_Configurethepriorityofscheduledreports",
+      "id": "STARVED_SCHEDULE",
+      "job_inspector_confirmation": "scheduler status=skipped ratio with reason citing concurrency; schedule_priority=default",
+      "kind": "detector",
+      "name": "Chronically skipped at default priority",
+      "risk_rationale": "Skipped far more often than it runs, due to scheduler contention rather than its own runtime, while sitting at default priority \u2014 so nothing will change: it keeps losing the slot lottery. Its alerts and reports silently do not fire, yet the search still looks enabled and healthy in the list.\n",
+      "risk_weight": 50,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Restructure as a single search with a join key (stats by), a lookup, or a subsearch that feeds terms into one outer search.\n",
+      "category": "resource",
+      "cost_rationale": "map dispatches one search per input row (default cap 10). Raising maxsearches turns one query into a concurrent search storm competing for scheduler slots.\n",
+      "cost_weight": 80,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*map\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "map \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Map",
+      "id": "SUBSEARCH_EXPLOSION",
+      "job_inspector_confirmation": "spawned search count in _audit; scheduler skip events while running",
+      "kind": "detector",
+      "name": "map with high maxsearches",
+      "risk_rationale": "Concurrency pressure skips OTHER searches \u2014 the blast radius is the whole scheduler, not this search.\n",
+      "risk_weight": 70,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Keep subsearches small and bounded (indexed filters, tight window); for large ID sets use lookups; for correlation use stats over a combined base search.\n",
+      "category": "subsearch",
+      "cost_rationale": "Every subsearch is a full extra search dispatched before the outer one can proceed; the outer search blocks on it.\n",
+      "cost_weight": 50,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "\\[\\s*search\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "About subsearches \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Aboutsubsearches",
+      "id": "SUBSEARCH_RISK",
+      "job_inspector_confirmation": "subsearch runtime near 60s or result count at exactly 10000 in search.log",
+      "kind": "detector",
+      "name": "Subsearch nearing platform caps",
+      "risk_rationale": "Defaults: 60s timeout (subsearch_maxtime), 10k results (subsearch_maxout). Hitting either finalizes the subsearch early and the outer search runs on partial input \u2014 silently.\n",
+      "risk_weight": 70,
+      "severity": "medium"
+    },
+    {
+      "aliases": [
+        "TRANSACTION_OVERUSE"
+      ],
+      "canonical_rewrite": "stats earliest(_time) AS start latest(_time) AS end values(...) BY id \u2014 add range(_time) for duration; reserve transaction for genuine startswith/endswith session semantics.\n",
+      "category": "resource",
+      "cost_rationale": "transaction is centralized streaming: every candidate event is held in SH memory while transactions assemble. It also requires descending time order, defeating index-order streaming.\n",
+      "cost_weight": 85,
+      "detection_signals": {
+        "pipeline_checks": [
+          "transaction_on_broad_input"
+        ],
+        "regexes": [
+          {
+            "pattern": "(?i)\\|\\s*transaction\\b",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "transaction \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Transaction",
+      "id": "TRANSACTION_ABUSE",
+      "job_inspector_confirmation": "SH memory growth; eviction warnings in search.log; eventCount >> resultCount at the transaction stage",
+      "kind": "detector",
+      "name": "transaction at scale",
+      "risk_rationale": "At maxopentxn (5000) / maxopenevents (100k) Splunk evicts LRU transactions \u2014 results are silently incomplete. Docs and community agree: >90% of transaction uses are better served by stats.\n",
+      "risk_weight": 80,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Constrain inside where: | tstats count from datamodel=Network_Traffic where nodename=All_Traffic index=fw by All_Traffic.action.\n",
+      "category": "optimization",
+      "cost_rationale": "tstats over an accelerated data model without index/sourcetype constraints scans all summary buckets \u2014 bloom-filter bucket elimination does not apply to DMA summaries the way it does to raw buckets.\n",
+      "cost_weight": 70,
+      "detection_signals": {
+        "pipeline_checks": [
+          "tstats_no_index_scope"
+        ],
+        "regexes": [
+          {
+            "pattern": "(?i)\\btstats\\b(?![^|]*\\bwhere\\b[^|]*\\bindex\\s*=)",
+            "scope": "pipeline"
+          },
+          {
+            "pattern": "(?i)\\bfrom\\s+datamodel\\b(?![^|]*\\bindex\\s*=)",
+            "scope": "pipeline"
+          }
+        ]
+      },
+      "doc_citation": "tstats \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Tstats",
+      "id": "TSTATS_DM_UNSCOPED",
+      "job_inspector_confirmation": "summary bucket scan counts across all indexes feeding the model",
+      "kind": "detector",
+      "name": "tstats/datamodel without index scope",
+      "risk_rationale": "\"It uses tstats so it is fast\" is a false comfort at portfolio scale; these grow with the summary footprint.\n",
+      "risk_weight": 40,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Filter on model/indexed fields inside tstats; apply lookup enrichment and lookup-based filters after the tstats aggregation.\n",
+      "category": "optimization",
+      "cost_rationale": "A where clause that can only be satisfied via an automatic lookup forces the full lookup to load and apply during what should be a tsidx-only operation.\n",
+      "cost_weight": 60,
+      "detection_signals": {
+        "pipeline_checks": [
+          "tstats_lookup_in_where"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "tstats \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Tstats",
+      "id": "TSTATS_LOOKUP_WHERE",
+      "job_inspector_confirmation": "command.search.lookups phase time inside a tstats search",
+      "kind": "detector",
+      "name": "Expensive automatic lookup inside tstats where",
+      "risk_rationale": "Cost only, but it silently converts the fast path into a slow one.\n",
+      "risk_weight": 25,
+      "severity": "medium"
+    },
+    {
+      "aliases": [
+        "TSTATS_AVAILABLE"
+      ],
+      "canonical_rewrite": "| tstats count where index=web by host \u2014 instead of index=web | stats count by host.\n",
+      "category": "optimization",
+      "cost_rationale": "Aggregating only indexed fields (index, sourcetype, source, host, _time) through raw-event stats reads _raw for nothing. tstats answers from tsidx alone \u2014 routinely 10-100x faster.\n",
+      "cost_weight": 70,
+      "detection_signals": {
+        "pipeline_checks": [
+          "stats_on_indexed_only_fields"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "tstats \u2014 https://help.splunk.com/en/?resourceId=Splunk_SearchReference_Tstats",
+      "id": "TSTATS_OPPORTUNITY",
+      "job_inspector_confirmation": "A/B runDuration stats vs tstats form",
+      "kind": "detector",
+      "name": "stats where tstats would serve",
+      "risk_rationale": "None \u2014 opportunity, not hazard. (Semantics differ slightly: tstats counts from tsidx; validate parity when converting.)\n",
+      "risk_weight": 10,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Name the indexes that actually hold the data: index=web OR index=app. If the index is unknown, find it once with | eventcount summarize=false index=* or metadata, then pin it.\n",
+      "category": "retrieval",
+      "cost_rationale": "index=* scans every index: metadata explosion plus I/O across all buckets. Splunk treats it as a literal instruction to search everything, not a convenience default.\n",
+      "cost_weight": 90,
+      "detection_signals": {
+        "pipeline_checks": [],
+        "regexes": [
+          {
+            "pattern": "(?i)\\bindex\\s*=\\s*\"?\\*\"?",
+            "scope": "retrieval"
+          }
+        ]
+      },
+      "doc_citation": "Quick tips for optimization \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Quicktipsforoptimization",
+      "id": "UNBOUNDED_INDEX",
+      "job_inspector_confirmation": "scanCount orders of magnitude above resultCount; command.search.index dominates phase timings",
+      "kind": "detector",
+      "name": "Unbounded index scan (index=*)",
+      "risk_rationale": "Competes with every other search for IOPS and scheduler slots; on shared infrastructure a single index=* over a wide window can starve the cluster.\n",
+      "risk_weight": 90,
+      "severity": "critical"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Run reporting searches in smart or fast mode; verbose is for interactive exploration.\n",
+      "category": "resource",
+      "cost_rationale": "Verbose mode extracts and returns every field and event even when the search only needs aggregates \u2014 pure overhead for reporting searches.\n",
+      "cost_weight": 35,
+      "detection_signals": {
+        "pipeline_checks": [
+          "dispatch_verbose_mode"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Search modes \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_Changethesearchmode",
+      "id": "VERBOSE_MODE",
+      "job_inspector_confirmation": "command.search.kv cost with no downstream field consumers",
+      "kind": "detector",
+      "name": "Verbose search mode where smart/fast suffices",
+      "risk_rationale": "None \u2014 cost only.\n",
+      "risk_weight": 10,
+      "severity": "low"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Size the window to the interval plus a small safety overlap (e.g. */5 cron with earliest=-6m@m); for rolling aggregates use summary indexing instead of re-scanning history every run.\n",
+      "category": "schedule",
+      "cost_rationale": "A search that runs every 5 minutes over 24 hours of events re-scans the same data ~288 times a day \u2014 the window/interval ratio is a direct I/O multiplier on every run.\n",
+      "cost_weight": 80,
+      "detection_signals": {
+        "pipeline_checks": [
+          "schedule_window_interval_mismatch"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Schedule reports \u2014 https://help.splunk.com/en/?resourceId=Splunk_Report_Schedulereports",
+      "id": "WINDOW_INTERVAL_MISMATCH",
+      "job_inspector_confirmation": "scanCount per run vs new events per interval; scheduler runDuration vs cron period",
+      "kind": "detector",
+      "name": "Dispatch window far exceeds schedule interval",
+      "risk_rationale": "Oversized windows push runDuration toward the cron interval (self-overlap skips) and usually signal copy-pasted dispatch settings nobody reviewed.\n",
+      "risk_weight": 55,
+      "severity": "high"
+    }
+  ],
+  "ruleset_version": "d6028124f92b",
+  "verdict_policy": {
+    "block_at": "high",
+    "description": "The single, unified verdict policy: how the worst finding severity maps to a verdict. block_at/warn_at are minimum severities in the order below. One honest verdict \u2014 critique is not a per-role dial; enforcement is a separate concern.",
+    "severity_order": [
+      "info",
+      "low",
+      "medium",
+      "high",
+      "critical"
+    ],
+    "version": 2,
+    "warn_at": "medium"
+  }
+}

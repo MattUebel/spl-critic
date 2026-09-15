@@ -1,0 +1,364 @@
+{
+  "few_shot": [
+    {
+      "bad_spl": "index=security sourcetype=ids_alert earliest=0 | stats count by signature",
+      "codes": [
+        "ALLTIME_RANGE"
+      ],
+      "explanation": "The classic zombie: scheduled every 5 minutes, earliest=0 rescans all of retention each run, and the search itself is disabled \u2014 still occupying a scheduled-search slot definitionally, invisible until someone audits.",
+      "good_spl": "index=security sourcetype=ids_alert earliest=-24h | stats count by signature",
+      "id": "alltime-zombie"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined status=500 | stats count by host | appendcols [search index=web sourcetype=access_combined status=500 | stats avg(bytes) by host]",
+      "codes": [
+        "APPENDCOLS_POSITIONAL",
+        "SUBSEARCH_RISK"
+      ],
+      "explanation": "appendcols stitches columns by row position, not a key \u2014 different ordering or lengths misalign every value. Computing both aggregates in one pass by the key is correct and cheaper (no second dispatch, no positional risk).",
+      "good_spl": "index=web sourcetype=access_combined status=500 | stats count avg(bytes) AS avg_bytes by host",
+      "id": "appendcols-positional"
+    },
+    {
+      "bad_spl": "* | stats count by host",
+      "codes": [
+        "BARE_STAR"
+      ],
+      "explanation": "A bare * retrieves everything the platform allows \u2014 no lexicon terms to intersect, no bloom elimination. Anchor with index + sourcetype + a term.",
+      "good_spl": "index=web sourcetype=access_combined status=200 | stats count by host",
+      "id": "bare-star-retrieval"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined earliest=-90d | timechart span=1d count",
+      "codes": [
+        "BROAD_TIME_RANGE"
+      ],
+      "explanation": "I/O scales linearly with the window. A 90-day window on a search consumed daily pays a ~13x multiplier over the 7 days that answer the question.",
+      "good_spl": "index=web sourcetype=access_combined earliest=-7d | timechart span=1d count",
+      "id": "broad-time-range"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined status=500 | collect index=summary",
+      "codes": [
+        "COLLECT_DUPLICATION"
+      ],
+      "explanation": "collect has no dedup intelligence \u2014 re-running over an already-summarized range duplicates every row. Drive it from one non-overlapping schedule (low).",
+      "good_spl": "index=web sourcetype=access_combined status=500 | stats count by uri_path",
+      "id": "collect-duplication"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined status=500 | dedup clientip | stats count",
+      "codes": [
+        "DEDUP_VS_STATS"
+      ],
+      "explanation": "Without sortby, WHICH event survives dedup is order-dependent and it runs on the SH. stats latest() by the key is deterministic and map-reducible (low).",
+      "good_spl": "index=web sourcetype=access_combined status=500 | stats latest(_time) AS last by clientip",
+      "id": "dedup-without-sortby"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined status=404 | delete",
+      "codes": [
+        "DELETE_COMMAND"
+      ],
+      "explanation": "delete is irreversible, frees no disk, and hides data from every search. It never belongs in a scheduled or ad-hoc analytics search \u2014 the safe intent is a scoped read. Never installed as a demo search.",
+      "good_spl": "index=web sourcetype=access_combined status=404 | stats count by uri_path",
+      "id": "delete-in-search"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined status=500 daysago=7 | stats count by clientip",
+      "codes": [
+        "DEPRECATED_TIME_MODIFIER"
+      ],
+      "explanation": "daysago= is a legacy modifier documented as valid but slated for removal; the snap-aware earliest/latest form is precise and future-proof (low).",
+      "good_spl": "index=web sourcetype=access_combined status=500 earliest=-7d@d latest=now | stats count by clientip",
+      "id": "deprecated-time-modifier"
+    },
+    {
+      "bad_spl": "index=web | head 1000 | search status=500 | stats count by uri_path",
+      "codes": [
+        "EARLY_CENTRALIZED"
+      ],
+      "explanation": "head is centralized streaming \u2014 placing it before the status filter drags the unfiltered stream to the search head, then throws most of it away.",
+      "good_spl": "index=web status=500 | head 1000 | stats count by uri_path",
+      "id": "early-centralized"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined status!=200 | stats count by status",
+      "codes": [
+        "EXCLUSION_PATTERN"
+      ],
+      "explanation": "Exclusion (field!=x) can't use the lexicon the way inclusion can \u2014 Splunk retrieves candidates then discards them, and != also drops null-field events.",
+      "good_spl": "index=web sourcetype=access_combined (status=404 OR status=500) | stats count by status",
+      "id": "exclusion-in-base"
+    },
+    {
+      "bad_spl": "index=* *error* | transaction host | table host, _time, _raw",
+      "codes": [
+        "UNBOUNDED_INDEX",
+        "LEADING_WILDCARD",
+        "TRANSACTION_ABUSE"
+      ],
+      "explanation": "The on-stage query: three anti-patterns stacked \u2014 scan every index, defeat the lexicon with a leading wildcard, then assemble transactions from the unfiltered stream on the search head. The rewrite scopes retrieval and replaces transaction with stats.",
+      "good_spl": "index=web sourcetype=access_combined status>=500 | stats earliest(_time) AS first_seen latest(_time) AS last_seen count BY host",
+      "id": "flagship-demo"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined | rex field=_raw \"(.*)error(.*)fatal(.*)\"",
+      "codes": [
+        "COMPLEX_REGEX"
+      ],
+      "explanation": "Multiple .* in one rex forces backtracking across full _raw for every event. Anchor with negated classes ([^,]+) and extract once into named fields.",
+      "good_spl": "index=web sourcetype=access_combined | rex field=_raw \"error=(?<err>[^,]+)\"",
+      "id": "greedy-regex"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined | stats count by clientip, uri",
+      "codes": [
+        "HIGH_CARDINALITY_BY"
+      ],
+      "explanation": "stats by a near-unique field (uri) builds one bucket per value \u2014 SH memory scales with cardinality. Aggregate by the dimension you actually report on.",
+      "good_spl": "index=web sourcetype=access_combined | stats count by status",
+      "id": "high-cardinality-by"
+    },
+    {
+      "bad_spl": "sourcetype=my_source | lookup my_lookup_file D OUTPUTNEW L | eval E=L/T | search A=25 L>100 E>50",
+      "codes": [
+        "LATE_FILTER"
+      ],
+      "explanation": "The canonical pipeline-order example: A=25 belongs in the base search, L>100 immediately after the lookup that creates L; only E>50 must wait for the eval. Filtering last transforms rows that were always going to be dropped.",
+      "good_spl": "sourcetype=my_source A=25 | lookup my_lookup_file D OUTPUTNEW L | search L>100 | eval E=L/T | search E>50",
+      "id": "late-filtering"
+    },
+    {
+      "bad_spl": "index=web *error* | stats count by status",
+      "codes": [
+        "LEADING_WILDCARD"
+      ],
+      "explanation": "*error* bypasses the lexicon and bloom filters \u2014 every term in every bucket is examined. An anchored field filter restores index-time elimination.",
+      "good_spl": "index=web sourcetype=access_combined status=5* | stats count by status",
+      "id": "leading-wildcard-search"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined | lookup http_status_desc status OUTPUT description | stats count by status",
+      "codes": [
+        "LOOKUP_BEFORE_AGG"
+      ],
+      "explanation": "The lookup enriches every raw event, but its output (description) is not used by the stats \u2014 so it can move after the aggregation and match a handful of grouped rows instead of every event (low: cost).",
+      "good_spl": "index=web sourcetype=access_combined | stats count by status | lookup http_status_desc status OUTPUT description",
+      "id": "lookup-before-agg"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined status=500 | head 50 | map search=\"search index=app host=$host$\"",
+      "codes": [
+        "SUBSEARCH_EXPLOSION"
+      ],
+      "explanation": "map dispatches a separate search per input row \u2014 a concurrent search storm that skips OTHER scheduled searches. Restructure to one search with a key.",
+      "good_spl": "index=web sourcetype=access_combined status=500 | stats count by host",
+      "id": "map-command-explosion"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined host=web*prod-01 | stats count by status",
+      "codes": [
+        "MID_TOKEN_WILDCARD"
+      ],
+      "explanation": "A wildcard spanning punctuation (host=web*prod-01) fights the segmenter and can silently match differently than intended. Match whole segments or TERM().",
+      "good_spl": "index=web sourcetype=access_combined host=\"webserver-prod-01\" | stats count by status",
+      "id": "mid-token-wildcard"
+    },
+    {
+      "bad_spl": "index=app log_level=ERROR | stats count by component",
+      "codes": [
+        "MISSING_SOURCETYPE"
+      ],
+      "explanation": "An index filter alone pulls every event class in that index. Adding sourcetype narrows the lexicon walk and downstream extraction (low: advisory).",
+      "good_spl": "index=app sourcetype=app_logs log_level=ERROR | stats count by component",
+      "id": "missing-sourcetype-scope"
+    },
+    {
+      "bad_spl": "index=network 10.1.2.3 | stats count by action",
+      "codes": [
+        "MISSING_TERM_DIRECTIVE"
+      ],
+      "explanation": "A raw IP is segmented on the dots; TERM(10.1.2.3) matches it as one lexicon term instead of intersecting four segments.",
+      "good_spl": "index=network TERM(10.1.2.3) | stats count by action",
+      "id": "missing-term-ip"
+    },
+    {
+      "bad_spl": "index=app env=prod ERROR | stats count AS errors | append [search index=app env=prod WARN | stats count AS warns] | append [search index=app env=prod INFO | stats count AS infos]",
+      "codes": [
+        "APPEND_PROLIFERATION",
+        "SUBSEARCH_RISK"
+      ],
+      "explanation": "Each append re-dispatches a search over the same index \u2014 three reads where one suffices. conditional aggregation over a single OR'd base search reads the data once.",
+      "good_spl": "index=app env=prod (ERROR OR WARN OR INFO) | stats count(eval(searchmatch(\"ERROR\"))) AS errors count(eval(searchmatch(\"WARN\"))) AS warns count(eval(searchmatch(\"INFO\"))) AS infos",
+      "id": "multiple-append"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined NOT * | stats count by status",
+      "codes": [
+        "NOT_STAR_UNPAREN"
+      ],
+      "explanation": "NOT * combined with an index filter without parentheses evaluates with surprising precedence \u2014 wrong results, no error. Parenthesize, or use inclusion.",
+      "good_spl": "index=web sourcetype=access_combined (status=404 OR status=500) | stats count by status",
+      "id": "not-star-unparenthesized"
+    },
+    {
+      "bad_spl": "index=web | table clientip, status, uri_path | search status=404 | stats count by clientip",
+      "codes": [
+        "MID_SEARCH_TABLE"
+      ],
+      "explanation": "table mid-pipeline is a transforming command \u2014 it centralizes and strips fields before the filter runs. fields (distributable) trims columns without the barrier; better yet, filter first.",
+      "good_spl": "index=web status=404 | stats count by clientip",
+      "id": "premature-table"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined | stats count by clientip, status | search status=500",
+      "codes": [
+        "PREMATURE_TRANSFORM"
+      ],
+      "explanation": "stats before the status filter transforms the entire candidate set on the search head, then throws most of it away. Filter in the base search first.",
+      "good_spl": "index=web sourcetype=access_combined status=500 | stats count by clientip",
+      "id": "premature-transform"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined | rex \"a=(?<a>\\S+)\" | rex \"b=(?<b>\\S+)\" | rex \"c=(?<c>\\S+)\"",
+      "codes": [
+        "MULTIPLE_REX"
+      ],
+      "explanation": "Each rex re-reads the source field per event; several in sequence multiply parse passes that one combined pattern would do once (low: cost only).",
+      "good_spl": "index=web sourcetype=access_combined | rex \"a=(?<a>\\S+) b=(?<b>\\S+) c=(?<c>\\S+)\"",
+      "id": "sequential-rex"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined | sort 0 _time | transaction clientip maxspan=30m",
+      "codes": [
+        "SORT_BEFORE_TRANSACTION",
+        "TRANSACTION_ABUSE"
+      ],
+      "explanation": "A sort barrier stacked in front of the already-expensive transaction \u2014 two SH-bound buffering passes; usually a smell that stats is the right tool.",
+      "good_spl": "index=web sourcetype=access_combined | stats earliest(_time) AS s latest(_time) AS e by clientip",
+      "id": "sort-before-transaction"
+    },
+    {
+      "bad_spl": "index=web | stats count by host, sourcetype",
+      "codes": [
+        "TSTATS_OPPORTUNITY"
+      ],
+      "explanation": "Counting by indexed fields only (host, sourcetype) never needs _raw \u2014 tstats answers from tsidx alone, routinely 10-100x faster.",
+      "good_spl": "| tstats count where index=web by host, sourcetype",
+      "id": "stats-vs-tstats"
+    },
+    {
+      "bad_spl": "index=auth action=failure [search index=threat_intel | fields src_ip] | stats count by src_ip",
+      "codes": [
+        "SUBSEARCH_RISK"
+      ],
+      "explanation": "The threat-intel subsearch is re-run on every execution and silently capped at 10k results / 60s. A lookup holds the same IOC set with no cap and no per-run dispatch.",
+      "good_spl": "index=auth action=failure [| inputlookup threat_intel_iocs | fields src_ip] | stats count by src_ip",
+      "id": "subsearch-risk"
+    },
+    {
+      "bad_spl": "index=web | transaction clientip maxspan=30m | stats avg(duration)",
+      "codes": [
+        "TRANSACTION_ABUSE"
+      ],
+      "explanation": "transaction assembles sessions in search-head memory and silently drops events past maxopentxn/maxopenevents. stats computes the same session bounds distributably, with no eviction.",
+      "good_spl": "index=web | stats earliest(_time) AS start latest(_time) AS end BY clientip | eval duration=end-start | stats avg(duration)",
+      "id": "transaction-overuse"
+    },
+    {
+      "bad_spl": "| tstats count from datamodel=Web by sourcetype",
+      "codes": [
+        "TSTATS_DM_UNSCOPED"
+      ],
+      "explanation": "tstats over an accelerated data model without an index constraint scans all summary buckets \u2014 \"it uses tstats so it's fast\" is false comfort. Constrain inside where.",
+      "good_spl": "| tstats count from datamodel=Web where index=web by sourcetype",
+      "id": "tstats-datamodel-unscoped"
+    },
+    {
+      "bad_spl": "index=* error | stats count by host",
+      "codes": [
+        "UNBOUNDED_INDEX"
+      ],
+      "explanation": "index=* scans every index in the environment. Naming the index turns a platform-wide crawl into a single-index read.",
+      "good_spl": "index=web sourcetype=access_combined \"error\" | stats count by host",
+      "id": "unbounded-index-scan"
+    },
+    {
+      "bad_spl": "index=web | join clientip [search index=firewall] | stats count by action",
+      "codes": [
+        "JOIN_OVERUSE",
+        "SUBSEARCH_RISK"
+      ],
+      "explanation": "join buffers its subsearch on the search head, capped at 50k rows / 60s \u2014 then truncates silently. A single pass with stats by the common key reads both datasets once and never truncates.",
+      "good_spl": "(index=web) OR (index=firewall) | stats values(action) AS action dc(index) AS sources BY clientip | where sources=2 | stats count by action",
+      "id": "unbounded-join"
+    },
+    {
+      "bad_spl": "index=web sourcetype=access_combined | stats count by clientip | sort -count | head 20",
+      "codes": [
+        "SORT_DEFAULT_LIMIT"
+      ],
+      "explanation": "A sort with no explicit count keeps only 10,000 rows and drops the rest before head sees them \u2014 the top-N can be computed on the wrong slice (low).",
+      "good_spl": "index=web sourcetype=access_combined | stats count by clientip | sort 20 -count",
+      "id": "unbounded-sort"
+    }
+  ],
+  "fragments": {
+    "ALLTIME_RANGE": "ALLTIME_RANGE (All-time search window; severity critical): All-time scheduled searches rescan the entire retention window every run \u2014 the canonical scheduled-search resource drain called out in Splunk docs. Risk: Cost grows without bound as data ages in; Cloud admission rules may hard-block, breaking the workflow that depends on the search. Fix: Bound the window (earliest=-24h or the schedule interval); for historical baselines use summary indexing or accelerated data models.",
+    "APPENDCOLS_POSITIONAL": "APPENDCOLS_POSITIONAL (appendcols joins by row position; severity medium): appendcols runs its argument as a subsearch (the 50k/60s caps apply) and stitches the columns onto the main results \u2014 another indexer round-trip on top of the base search. Risk: appendcols matches by ROW POSITION, not a key. If the two result sets are ordered differently or have different lengths, every value lands on the wrong row \u2014 the output is confidently wrong with no error. Fix: Join on an explicit key instead of position: one base search with `stats ... BY key`, or a `lookup`. Reserve appendcols for genuinely positional, equal-length, identically-ordered sets.",
+    "APPEND_PROLIFERATION": "APPEND_PROLIFERATION (Repeated append subsearches; severity medium): Each | append [search ...] dispatches another full search \u2014 typically re-scanning the same indexes the base search already read. Risk: Each append is also a subsearch with the 10k/60s caps and their silent truncation behavior. Fix: One base search with OR'd scopes plus stats/eval to separate the branches; union when branches are genuinely different datasets.",
+    "APPEND_VS_UNION": "APPEND_VS_UNION (append chain where one base search serves; severity low): Appending searches that differ only in a filter re-runs retrieval N times. One base search with OR'd scope plus conditional aggregation (stats count(eval(...))) reads the data once. Risk: Inherits subsearch caps per appended branch. Fix: (index=a cond1) OR (index=a cond2) | stats count(eval(cond1)) AS c1 count(eval(cond2)) AS c2 \u2014 or union for genuinely distinct datasets.",
+    "BARE_STAR": "BARE_STAR (Bare * retrieval; severity high): A bare * retrieves everything the platform allows \u2014 no lexicon terms to intersect, no bloom filter elimination. Risk: Result volume is bounded only by platform limits, so behavior degrades unpredictably as data grows. Fix: Anchor with index, sourcetype, and at least one indexed term before any wildcard.",
+    "BETTER_ALTERNATIVE": "BETTER_ALTERNATIVE (Cheaper equivalent exists; severity info): Remediation umbrella used in critique output when a rewrite exists: stats by common key, lookup for reference data, single base search with OR plus stats, accelerated data model via tstats. Risk: Advisory only \u2014 carries the rewrite suggestion, not a finding of its own. Fix: Emitted alongside a detector code; the suggested_spl field carries the concrete rewrite.",
+    "BROAD_TIME_RANGE": "BROAD_TIME_RANGE (Broader time range than needed; severity medium): I/O scales linearly with the time window. A -30d window when -24h answers the question is a 30x multiplier on every downstream cost. Risk: Long windows on scheduled searches push runDuration toward the cron interval \u2014 the self-overlap skip pattern. Fix: Match the window to the question; for scheduled searches, size earliest to the schedule interval plus a safety margin.",
+    "COLLECT_DUPLICATION": "COLLECT_DUPLICATION (collect duplicates the summary index on re-run; severity low): collect writes results into a summary index \u2014 legitimate for scheduled summary indexing, but it has no dedup intelligence. Risk: Re-running collect over a source/time range it already summarized duplicates every row (community reports of >100x inflation), and it uses the original _time so duplicates scatter historically \u2014 every downstream report built on the summary is silently inflated. Safe only when scheduled once per non-overlapping window. Fix: Drive collect from a single, non-overlapping scheduled search; never backfill by re-running it ad hoc over a window already summarized. Prefer data-model acceleration where it fits.",
+    "COMPLEX_REGEX": "COMPLEX_REGEX (Greedy regex over _raw; severity medium): Multiple .* in one pattern forces backtracking across full _raw for every event \u2014 CPU cost that distributable placement cannot hide. Risk: Pathological backtracking can dominate a search's CPU on hostile input. Fix: Anchor patterns, replace .* with bounded or negated classes ([^\"]*), and extract once into fields rather than re-matching.",
+    "DEDUP_VS_STATS": "DEDUP_VS_STATS (dedup where stats latest()/values() serves; severity low): dedup keeps arbitrary representatives unless paired with sortby (its non-streaming, expensive mode). stats latest()/values() by key states the intent and aggregates distributably where possible. Risk: Without sortby, WHICH event survives dedup is order-dependent \u2014 subtly nondeterministic results. Fix: | stats latest(status) AS status latest(_time) AS _time BY host \u2014 instead of | dedup host.",
+    "DELETE_COMMAND": "DELETE_COMMAND (delete is irreversible and frees no disk; severity critical): delete marks events unsearchable across the whole environment; it does NOT reclaim disk \u2014 the data stays on disk, just hidden from every search. Risk: Irreversible: recovery means re-indexing the source. A too-broad base search silently masks huge swaths of data from all users. A flagged risky command gated behind the can_delete role \u2014 its presence in a saved search warrants review every single time. Fix: Do not delete from a scheduled or ad-hoc search. To remove data use index retention (frozenTimePeriodInSecs) or `splunk clean` on a rebuildable index; to hide a subset, fix the upstream filter \u2014 never delete.",
+    "DEPRECATED_TIME_MODIFIER": "DEPRECATED_TIME_MODIFIER (Deprecated time modifier; severity low): Legacy modifiers (daysago=, startminutesago=, searchtimespanhours=, starttimeu=) are documented as valid but slated for removal, and each is a slower, less flexible path than the relative-time syntax. Risk: Removal risk: a future release drops them and the saved search silently breaks. Correctness-adjacent \u2014 they express windows less precisely than snap-aware earliest/latest. Fix: Use earliest/latest with relative units and snapping: daysago=7 becomes earliest=-7d@d latest=now; searchtimespanhours=1 becomes a matched earliest/latest pair.",
+    "EARLY_CENTRALIZED": "EARLY_CENTRALIZED (Centralized command before filtering; severity high): Centralized streaming commands (transaction, head, streamstats) force all events matched so far onto the search head. Placed before narrow filters, the SH holds an unscoped event set \u2014 the map-reduce model inverted. Risk: Search head memory pressure affects every user on the SH, not just the offending search. Fix: Move every distributable filter (search terms, where, fields) ahead of the first centralized command; often the centralized command itself can become stats.",
+    "EVENTSTATS_MEMORY": "EVENTSTATS_MEMORY (eventstats/streamstats drop columns at the memory cap; severity low): Both buffer aggregation state on the search head across the whole result set \u2014 centralized, not distributable to the indexers. Risk: At max_mem_usage_mb (default 200 MB for these) the processor STOPS adding the computed fields to results rather than spilling to disk the way stats does \u2014 the column silently goes missing on large sets. Fix: Reduce the set before the windowed stat (filter early, `fields` down), or use `stats` (which spills to disk) when a global aggregate \u2014 not a per-event running value \u2014 is what you actually need.",
+    "EXCLUSION_PATTERN": "EXCLUSION_PATTERN (Exclusion filter in base search; severity medium): Exclusion (NOT field=x, field!=x) cannot use the lexicon the way inclusion can \u2014 Splunk still retrieves candidates and discards them. Risk: != also drops events where the field is absent, which is frequently not what the author intended. Fix: Express what you DO want: enumerate the included values, or filter after retrieval with | where when exclusion is genuinely needed.",
+    "HEAVY_KV": "HEAVY_KV (Heavy search-time field extraction; severity medium): High command.search.kv means the search pays per-event extraction cost (KV_MODE, search-time props) across the scanned set \u2014 often alongside missing early filters. Risk: Cost signal only. Fix: Filter on indexed fields first; trim with fields; consider indexed extractions for hot sourcetypes.",
+    "HEAVY_LOOKUPS": "HEAVY_LOOKUPS (Heavy automatic lookup enrichment; severity medium): High command.search.lookups means automatic lookups are applied to every event scanned \u2014 large lookup files multiply the effect. Risk: Cost signal only. Fix: Scope the search so fewer events flow through enrichment; disable unneeded automatic lookups; enrich after aggregation where possible.",
+    "HEAVY_TYPER": "HEAVY_TYPER (Heavy eventtype/tag annotation; severity low): High command.search.typer means eventtype and tag evaluation is applied per event \u2014 environments with many broad eventtypes pay this on every search that touches them. Risk: Cost signal only. Fix: Constrain eventtype definitions; avoid tag= filters over broad scopes; filter on indexed terms first.",
+    "HIGH_CARDINALITY_BY": "HIGH_CARDINALITY_BY (Aggregation by ultra-high-cardinality field; severity medium): stats ... by a near-unique field builds one bucket per event \u2014 SH memory scales with cardinality and renders crawl. Risk: Commands capped by max_mem_usage_mb silently limit output when the bucket table exceeds the cap. Fix: Aggregate by the dimension you actually report on; bucket continuous values first (bin); use estdc() for distinct counts.",
+    "HYPERACTIVE_SCHEDULE": "HYPERACTIVE_SCHEDULE (Every-minute schedule; severity medium): A */1 cron occupies a scheduler slot 1,440 times a day; few detections genuinely need sub-5-minute latency, and dense schedules crowd out every other search on the host. Risk: Any runtime hiccup immediately self-overlaps; skip storms follow. Fix: Widen to */5 or more; if near-real-time latency is a hard requirement, consider an accelerated data model or streaming-style detection instead.",
+    "JOIN_OVERUSE": "JOIN_OVERUSE (join with unbounded subsearch; severity high): join is SH-only and runs its right side as a subsearch \u2014 capped at 50k rows (subsearch_maxout join context) and 60s (subsearch_maxtime). SQL habits port badly: Splunk joins buffer and match on the search head. Risk: Past the caps Splunk truncates silently \u2014 the canonical log line is \"50000 results, truncating to maxout\". The join completes, the answer is wrong, nobody is told. Fix: Restructure as a single pass: (index=a) OR (index=b) | stats values(...) by join_key \u2014 or use lookup for reference data.",
+    "LATE_FILTER": "LATE_FILTER (Movable filter placed late in the pipeline; severity medium): A search/where predicate that only references fields available earlier could have dropped rows before they were transformed or shipped to the SH. The canonical example: | lookup | eval | search A=25 L>100 \u2014 A=25 belongs in the base search, L>100 right after the lookup. Risk: Low correctness risk; wasted compute and latency. Fix: Move each predicate to the earliest stage where its fields exist; only predicates on derived fields stay after the eval that derives them.",
+    "LEADING_WILDCARD": "LEADING_WILDCARD (Leading wildcard; severity high): Leading wildcards (*fail, field=*value) bypass the tsidx lexicon AND bloom filters \u2014 every term in every bucket must be examined. Trailing wildcards (fail*) can still enumerate the lexicon. Risk: Forces the search from dense toward super-sparse on the density spectrum; a single leading-wildcard search can dominate indexer I/O. Fix: Anchor the term: status=fail* instead of *fail*; exact terms or TERM() for tokens; lookup/inputlookup for large ID sets.",
+    "LOOKUP_BEFORE_AGG": "LOOKUP_BEFORE_AGG (lookup enrichment before aggregation; severity low): A lookup runs per event on every row that reaches it. When its output fields are not used by the following transforming command, the enrichment could run AFTER the aggregation \u2014 matching a handful of grouped rows instead of every raw event. Risk: Cost only. Splunk's own lookup docs give the canonical example: ... | stats count by status | lookup status_desc status OUTPUT description beats doing the lookup before the stats. Fix: Move the lookup after the transforming command when its output is not part of the group-by or aggregation: ... | stats count by <key> | lookup ... <key> OUTPUT <fields>.",
+    "MACRO_OPACITY": "MACRO_OPACITY (Search calls macros the critic cannot see inside; severity info): Macros expand before the search runs; SPL Critic analyzes the TEXT, so it cannot see inside a `macro` call. A macro can hide any anti-pattern \u2014 index=*, all-time, leading wildcards, join, or summariesonly=false (the ES security_content_summariesonly case expands to raw-data scans through two layers of macro). Risk: Not a defect \u2014 an audit-coverage gap. A clean verdict on a macro-heavy search is only as complete as the macros are benign. Fix: Expand the search to audit it fully \u2014 Search preview (Cmd/Ctrl-Shift-E) or `splunk btool macros list` \u2014 then re-run the critique on the expanded SPL.",
+    "MID_SEARCH_TABLE": "MID_SEARCH_TABLE (table in mid-pipeline; severity medium): table is transforming \u2014 it centralizes rows and drops fields mid-flight. Downstream commands then run on the SH against a format meant for display. Risk: Dropped fields silently break downstream lookups/evals that expected them. Fix: Use | fields to trim columns mid-pipeline (distributable); reserve table for the final display stage.",
+    "MID_TOKEN_WILDCARD": "MID_TOKEN_WILDCARD (Mid-token wildcard across punctuation; severity high): Wildcards spanning punctuation (host=sh-*splunkcloud*) fight the segmenter: Splunk indexes segments split on punctuation, so matching costs more. Risk: Correctness hazard, not just cost \u2014 segment boundaries mean mid-token wildcards can silently match differently than intended. Fix: Match whole segments or use TERM() for exact tokens containing punctuation; split the filter into anchored parts.",
+    "MISSED_ALERT_WINDOWS": "MISSED_ALERT_WINDOWS (Alert skipping evaluation windows; severity high): Cost is not the issue \u2014 coverage is. With realtime_schedule=1 (the default), a skipped run's time window is never evaluated at all. Risk: An alert with actions that has skipped runs has silent detection gaps: events in those windows were never inspected, and nothing tells the owner. The most dangerous failure mode a scheduled alert has. Fix: Set realtime_schedule=0 (continuous schedule) so missed windows are evaluated late rather than never; then fix the cause of the skips (self-overlap or scheduler pressure).",
+    "MISSING_FIELDS": "MISSING_FIELDS (No early field trimming; severity low): Without | fields, every extracted column ships indexers \u2192 SH for every surviving event, whether or not anything downstream uses it. Risk: None \u2014 pure bandwidth/memory overhead. Fix: Add | fields keep-list immediately after retrieval (fields is distributable streaming, so it runs on the indexers).",
+    "MISSING_SOURCETYPE": "MISSING_SOURCETYPE (Index without sourcetype scope; severity low): An index filter alone pulls every event class in that index; sourcetype narrows the lexicon walk and downstream field extraction. Risk: Extra event classes can also skew results (fields with the same name across sourcetypes). Fix: Add sourcetype= (and source=/host= where meaningful) to the retrieval stage.",
+    "MISSING_TERM_DIRECTIVE": "MISSING_TERM_DIRECTIVE (Exact token without TERM(); severity medium): High-cardinality exact tokens containing minor segmenters (IPs, GUIDs) match faster as TERM(10.0.0.1) \u2014 one lexicon term instead of a segment intersection. Risk: Low risk; purely an efficiency opportunity. Fix: Wrap exact punctuated tokens in TERM(): TERM(10.0.0.1), TERM(user@host).",
+    "MULTIPLE_REX": "MULTIPLE_REX (Sequential rex commands; severity low): Each rex re-reads the source field per event; several in sequence multiply parse passes that one combined pattern (or props-based extraction) would do once. Risk: Low \u2014 cost only. Fix: Combine into one rex with multiple named groups, or promote stable extractions into props.conf/transforms.conf.",
+    "MVEXPAND_MEMORY": "MVEXPAND_MEMORY (mvexpand truncates at the memory cap; severity low): mvexpand holds the entire expanded chunk in search-head memory; carrying _raw along multiplies the footprint per output row. Risk: On overflow of max_mem_usage_mb (default 500 MB) mvexpand TRUNCATES the chunk and emits only a warning \u2014 the search succeeds with missing rows. Fix: Drop unused fields (especially _raw) before expanding: `... | fields - _raw | mvexpand <field>`, so the chunk stays under the cap.",
+    "NON_INDEXED_FILTER": "NON_INDEXED_FILTER (Filtering on non-indexed form of an indexed field; severity medium): When an indexed (or default) field exists, filtering on the search-time equivalent forces _raw reads and extraction across more buckets. Risk: Low correctness risk; cost and latency only. Fix: Use the documented indexed field for the sourcetype (props.conf / CIM), or add an indexed term alongside the extracted-field filter.",
+    "NOT_STAR_UNPAREN": "NOT_STAR_UNPAREN (Unparenthesized NOT *; severity high): Minor cost impact; this is primarily a correctness trap. Risk: NOT * combined with index= or other filters without parentheses evaluates with surprising precedence \u2014 wrong results, no error. Fix: Parenthesize: index=x (NOT *pattern*) \u2014 or better, replace the negation with an inclusion filter.",
+    "NO_SCHEDULE_COURTESY": "NO_SCHEDULE_COURTESY (Frequent search without skew or schedule window; severity low): Non-alert reports that demand exact-time execution (allow_skew=0, no schedule_window) pile onto the same minute slots and crowd the scheduler \u2014 the thundering-herd ingredient. Risk: Contention it causes skips OTHER searches, including alerts. Fix: For reports that tolerate flexible timing: schedule_window=auto and/or allow_skew=5m; reserve exact-time slots for searches that need them.",
+    "OUTPUTLOOKUP_BLOAT": "OUTPUTLOOKUP_BLOAT (outputlookup writes a bundle-replicated CSV; severity low): A CSV lookup table lives on the search head and is replicated to every indexer inside the knowledge bundle \u2014 and by default the whole table is re-sent each time any part of it changes. A large or frequently-written CSV bloats every search's bundle replication. (A KV Store target avoids this.) Risk: outputlookup is a flagged risky command (it can overwrite or lose data). Advisory: the CSV size is not visible in the SPL text, so this never blocks \u2014 most outputlookups are small and fine. Fix: For large or often-updated tables, write to a KV Store collection instead of a CSV (not bundle-replicated by default); keep CSV lookups small and rarely written; consider `override_if_empty=false` to avoid clobbering.",
+    "OVERRUN_RANGE": "OVERRUN_RANGE (Runtime exceeds the time span searched; severity medium): The search spends more wall-clock running than the span of data it examines \u2014 e.g. it reads 5 minutes of events but takes 10 minutes to finish. A pure inefficiency signal: the work is dominated by how the search is written, not by how much time it covers. Risk: Runtime longer than the window makes self-overlap likely on any frequent schedule and wastes a scheduler slot for the whole duration. Fix: Fix the search structure (see its SPL findings \u2014 usually missing indexed filters, leading wildcards, or raw-data scans that tstats would answer); the window itself is fine, the search is slow for its size.",
+    "PREMATURE_TRANSFORM": "PREMATURE_TRANSFORM (Transforming command before adequate filtering; severity medium): stats/sort/dedup are barriers: every event produced so far must arrive before they emit a row. Transforming the full candidate set then filtering the output wastes the whole difference. Risk: Barrier commands lengthen runDuration \u2014 scheduled searches drift toward self-overlap. Fix: Filter first: push search/where clauses before the transform; aggregate the smallest set that answers the question.",
+    "REALTIME_DISPATCH": "REALTIME_DISPATCH (Real-time dispatch on a scheduled search; severity medium): A real-time dispatch window (rt- earliest / rt latest) runs a continuous search that holds a dedicated pipeline for as long as it lives \u2014 far more expensive than a periodic historical search, and it draws against the separate real-time search quota. Risk: \"Scheduled\" and \"real-time\" are contradictory intents: the search either runs continuously (pinning a slot the cron never releases) or its rt window is meaningless for a periodic run. Almost always a habit carried over from ad-hoc real-time searches, not a deliberate choice. Fix: Use historical relative-time bounds sized to the schedule (e.g. a */5 cron with earliest=-6m@m latest=now). If you truly need sub-second latency, an accelerated data model or an ingest-time pipeline scales where a standing real-time search does not.",
+    "SELF_OVERLAP": "SELF_OVERLAP (Runtime exceeds schedule interval; severity high): Average runtime longer than the cron interval means every run collides with the next \u2014 the search occupies its slot continuously. Risk: Guaranteed per-search max_concurrent skips: the schedule silently degrades to \"whenever the previous run finishes\". Fix: Make the search faster (see its SPL findings) or widen the interval to comfortably exceed p95 runtime.",
+    "SILENT_TRUNCATION": "SILENT_TRUNCATION (Result set silently truncated; severity high): The cost is mostly already paid \u2014 this code is about the answer being wrong. Risk: Truncation at subsearch_maxout / maxresultrows produces confidently wrong results. In an alerting search this means missed detections, not slowness. Fix: Eliminate the pattern that can truncate (see JOIN_OVERUSE / SUBSEARCH_RISK rewrites); where a cap is genuinely acceptable, assert it explicitly with head and document why.",
+    "SORT_BEFORE_TRANSACTION": "SORT_BEFORE_TRANSACTION (sort immediately before transaction; severity medium): sort is a full-dataset barrier stacked in front of the already-expensive transaction \u2014 two SH-bound buffering passes back to back. Risk: Usually a symptom: the author is fighting transaction's ordering requirement, a strong smell that stats is the right tool. Fix: Replace the pair with stats aggregation by the transaction key; if transaction is genuinely required, let it consume index order directly.",
+    "SORT_DEFAULT_LIMIT": "SORT_DEFAULT_LIMIT (Unbounded sort truncates at 10,000; severity low): sort is a full-dataset barrier on the search head \u2014 the whole set is buffered before anything is emitted. Risk: A sort with no explicit count defaults to 10,000 results and silently discards the rest BEFORE downstream commands see them \u2014 a top-N over a larger set is computed on the wrong 10k, with no error. Harmless under 10k rows, wrong above it. Fix: State the bound: `sort 0 <field>` keeps everything (accepting the memory cost), `sort <N> <field>` takes an explicit top-N. Never rely on the implicit 10,000 default.",
+    "STARVED_SCHEDULE": "STARVED_SCHEDULE (Chronically skipped at default priority; severity medium): The waste is inverted: a starved search barely consumes I/O because it is mostly being skipped. You are paying for a detection or report that rarely executes, and the slots it does win are spent losing races against the herd. Risk: Skipped far more often than it runs, due to scheduler contention rather than its own runtime, while sitting at default priority \u2014 so nothing will change: it keeps losing the slot lottery. Its alerts and reports silently do not fire, yet the search still looks enabled and healthy in the list. Fix: Decide whether the search matters. If it does, raise schedule_priority or move it off the contended minute (schedule_window=auto / allow_skew) so it stops colliding with the herd. If it does not, disable it. Either way, stop paying for a schedule that mostly never runs.",
+    "SUBSEARCH_EXPLOSION": "SUBSEARCH_EXPLOSION (map with high maxsearches; severity high): map dispatches one search per input row (default cap 10). Raising maxsearches turns one query into a concurrent search storm competing for scheduler slots. Risk: Concurrency pressure skips OTHER searches \u2014 the blast radius is the whole scheduler, not this search. Fix: Restructure as a single search with a join key (stats by), a lookup, or a subsearch that feeds terms into one outer search.",
+    "SUBSEARCH_RISK": "SUBSEARCH_RISK (Subsearch nearing platform caps; severity medium): Every subsearch is a full extra search dispatched before the outer one can proceed; the outer search blocks on it. Risk: Defaults: 60s timeout (subsearch_maxtime), 10k results (subsearch_maxout). Hitting either finalizes the subsearch early and the outer search runs on partial input \u2014 silently. Fix: Keep subsearches small and bounded (indexed filters, tight window); for large ID sets use lookups; for correlation use stats over a combined base search.",
+    "TRANSACTION_ABUSE": "TRANSACTION_ABUSE (transaction at scale; severity high): transaction is centralized streaming: every candidate event is held in SH memory while transactions assemble. It also requires descending time order, defeating index-order streaming. Risk: At maxopentxn (5000) / maxopenevents (100k) Splunk evicts LRU transactions \u2014 results are silently incomplete. Docs and community agree: >90% of transaction uses are better served by stats. Fix: stats earliest(_time) AS start latest(_time) AS end values(...) BY id \u2014 add range(_time) for duration; reserve transaction for genuine startswith/endswith session semantics.",
+    "TSTATS_DM_UNSCOPED": "TSTATS_DM_UNSCOPED (tstats/datamodel without index scope; severity medium): tstats over an accelerated data model without index/sourcetype constraints scans all summary buckets \u2014 bloom-filter bucket elimination does not apply to DMA summaries the way it does to raw buckets. Risk: \"It uses tstats so it is fast\" is a false comfort at portfolio scale; these grow with the summary footprint. Fix: Constrain inside where: | tstats count from datamodel=Network_Traffic where nodename=All_Traffic index=fw by All_Traffic.action.",
+    "TSTATS_LOOKUP_WHERE": "TSTATS_LOOKUP_WHERE (Expensive automatic lookup inside tstats where; severity medium): A where clause that can only be satisfied via an automatic lookup forces the full lookup to load and apply during what should be a tsidx-only operation. Risk: Cost only, but it silently converts the fast path into a slow one. Fix: Filter on model/indexed fields inside tstats; apply lookup enrichment and lookup-based filters after the tstats aggregation.",
+    "TSTATS_OPPORTUNITY": "TSTATS_OPPORTUNITY (stats where tstats would serve; severity medium): Aggregating only indexed fields (index, sourcetype, source, host, _time) through raw-event stats reads _raw for nothing. tstats answers from tsidx alone \u2014 routinely 10-100x faster. Risk: None \u2014 opportunity, not hazard. (Semantics differ slightly: tstats counts from tsidx; validate parity when converting.) Fix: | tstats count where index=web by host \u2014 instead of index=web | stats count by host.",
+    "UNBOUNDED_INDEX": "UNBOUNDED_INDEX (Unbounded index scan (index=*); severity critical): index=* scans every index: metadata explosion plus I/O across all buckets. Splunk treats it as a literal instruction to search everything, not a convenience default. Risk: Competes with every other search for IOPS and scheduler slots; on shared infrastructure a single index=* over a wide window can starve the cluster. Fix: Name the indexes that actually hold the data: index=web OR index=app. If the index is unknown, find it once with | eventcount summarize=false index=* or metadata, then pin it.",
+    "VERBOSE_MODE": "VERBOSE_MODE (Verbose search mode where smart/fast suffices; severity low): Verbose mode extracts and returns every field and event even when the search only needs aggregates \u2014 pure overhead for reporting searches. Risk: None \u2014 cost only. Fix: Run reporting searches in smart or fast mode; verbose is for interactive exploration.",
+    "WINDOW_INTERVAL_MISMATCH": "WINDOW_INTERVAL_MISMATCH (Dispatch window far exceeds schedule interval; severity high): A search that runs every 5 minutes over 24 hours of events re-scans the same data ~288 times a day \u2014 the window/interval ratio is a direct I/O multiplier on every run. Risk: Oversized windows push runDuration toward the cron interval (self-overlap skips) and usually signal copy-pasted dispatch settings nobody reviewed. Fix: Size the window to the interval plus a small safety overlap (e.g. */5 cron with earliest=-6m@m); for rolling aggregates use summary indexing instead of re-scanning history every run."
+  },
+  "ruleset_version": "d6028124f92b"
+}

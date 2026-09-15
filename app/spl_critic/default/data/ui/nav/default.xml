@@ -1,0 +1,11 @@
+<!-- Splunk 10.4 modern nav: icon= accepts names from the fixed Splunk React
+     icon set (dev.splunk.com/enterprise/reference/dashboardnav). Docs only
+     show icon= on <a>, but it works on <view> too (verified live on 10.4).
+     color= tints the icon background/selection, not the whole bar. -->
+<nav search_view="critique" color="#0e7490">
+  <view name="home" default="true" icon="layoutoverview" />
+  <view name="critique" icon="filemagnifier" />
+  <view name="auditor" icon="filechart" />
+  <view name="catalog" icon="layerstriple" />
+  <view name="settings" icon="cog" />
+</nav>
