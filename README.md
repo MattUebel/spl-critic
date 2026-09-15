@@ -1,5 +1,15 @@
 # SPL Critic
 
+> **Experimental. Not production software.** SPL Critic is a personal
+> research and demonstration project built for a conference talk. It is
+> published for education: to show one way an agent can judge Splunk
+> searches from their structure and their measured history. It is not
+> supported, not endorsed by any employer or vendor, has no warranty, no
+> roadmap commitments, and no guarantee that any verdict, rewrite, or
+> recommendation it produces is correct or safe to apply. Run it on a test
+> instance. Read every rewrite before you use it. Do not point it at
+> production data you are not allowed to send to a third-party model.
+
 An AI second opinion for Splunk searches, packaged as a Splunk app.
 
 SPL Critic is **agent-judged**. It gathers everything about a search that a
@@ -71,6 +81,23 @@ curl -k -u admin:<password> https://<host>:8089/services/spl_critic/rules \
 
 Custom rules are stored in `local/spl_critic_rules.conf` and can also be
 managed by any conf deployment mechanism.
+
+## Status and limits
+
+- **Experiment, not product.** One person built this to explore an idea and
+  demo it. Expect rough edges, breaking changes between versions, and gaps.
+- **No guarantees.** The agent's output is model inference over the facts it
+  is given. It can be wrong, incomplete, or confidently misleading. Nothing
+  here replaces your own review, your change process, or Splunk's own tooling.
+- **Sends SPL to a third-party model.** Redaction covers obvious secrets, not
+  everything. Check your data-handling obligations before configuring a key.
+- **Costs money.** Every judgment is a model call billed to your OpenRouter
+  account. The cache makes repeats free; the first full portfolio pass is not.
+- **Tested narrowly.** Developed against a single-instance Splunk Enterprise
+  10.4 test box with synthetic data. Search head clusters, Splunk Cloud,
+  older releases, and large portfolios are untested.
+- **No support.** Issues and pull requests are welcome, answers are not
+  promised. Use at your own risk.
 
 ## Privacy and safety
 
