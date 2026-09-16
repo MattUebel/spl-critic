@@ -498,6 +498,27 @@
     },
     {
       "aliases": [],
+      "canonical_rewrite": "Either re-enable the app on purpose or move the searches that still matter to a live app and remove the rest.\n",
+      "category": "portfolio",
+      "cost_rationale": "The search is enabled and scheduled, but its app is disabled, so the scheduler never dispatches it; it appears in every inventory as a live search that quietly does nothing.\n",
+      "cost_weight": 10,
+      "detection_signals": {
+        "pipeline_checks": [
+          "fact_app_disabled"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "savedsearches.conf \u2014 https://help.splunk.com/en/?resourceId=Splunk_Admin_savedsearchesconf",
+      "id": "APP_DISABLED",
+      "job_inspector_confirmation": "apps/local shows disabled=1 for the search's app; no scheduler events for the search",
+      "kind": "detector",
+      "name": "Scheduled inside a disabled app",
+      "risk_rationale": "Alerts in a disabled app are the classic silent gap after an app cleanup: the search is enabled, the alert is configured, and nothing ever fires.\n",
+      "risk_weight": 40,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
       "canonical_rewrite": "Anchor with index, sourcetype, and at least one indexed term before any wildcard.\n",
       "category": "retrieval",
       "cost_rationale": "A bare * retrieves everything the platform allows \u2014 no lexicon terms to intersect, no bloom filter elimination.\n",
@@ -682,6 +703,27 @@
     },
     {
       "aliases": [],
+      "canonical_rewrite": "Decide: delete the search, or re-enable it deliberately with a window sized to its interval and an owner who wants its output.\n",
+      "category": "portfolio",
+      "cost_rationale": "Costs nothing today, but the cron and dispatch window are still set, so a bulk enable, an app update, or a well-meaning admin resurrects it exactly as it was, window and all.\n",
+      "cost_weight": 20,
+      "detection_signals": {
+        "pipeline_checks": [
+          "fact_disabled_but_scheduled"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "savedsearches.conf \u2014 https://help.splunk.com/en/?resourceId=Splunk_Admin_savedsearchesconf",
+      "id": "DISABLED_BUT_SCHEDULED",
+      "job_inspector_confirmation": "disabled=1 with cron_schedule set in the saved search entry",
+      "kind": "detector",
+      "name": "Disabled search that still carries a schedule",
+      "risk_rationale": "A schedule that outlived its intent: nobody decided this search should run every five minutes over all time, it just never got deleted.\n",
+      "risk_weight": 35,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
       "canonical_rewrite": "Move every distributable filter (search terms, where, fields) ahead of the first centralized command; often the centralized command itself can become stats.\n",
       "category": "pipeline",
       "cost_rationale": "Centralized streaming commands (transaction, head, streamstats) force all events matched so far onto the search head. Placed before narrow filters, the SH holds an unscoped event set \u2014 the map-reduce model inverted.\n",
@@ -700,6 +742,27 @@
       "risk_rationale": "Search head memory pressure affects every user on the SH, not just the offending search.\n",
       "risk_weight": 60,
       "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Confirm what the report was for. If it fed a dashboard or a person, wire that consumer explicitly; if nothing consumes it, disable it and keep the SPL in version control instead of the scheduler.\n",
+      "category": "portfolio",
+      "cost_rationale": "No alert action, no summary index, and 95% or more of its runs return zero results over the measured window: every dispatch pays the scan and the scheduler slot for an answer that is empty and that no downstream consumer would receive anyway.\n",
+      "cost_weight": 60,
+      "detection_signals": {
+        "pipeline_checks": [
+          "fact_empty_report"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Schedule reports \u2014 https://help.splunk.com/en/?resourceId=Splunk_Report_Schedulereports",
+      "id": "EMPTY_REPORT",
+      "job_inspector_confirmation": "scheduler events show result_count=0 on nearly every run; no actions and no summary index configured",
+      "kind": "detector",
+      "name": "Scheduled report nobody and nothing consumes",
+      "risk_rationale": "Either the condition it looks for no longer occurs, or the search is wrong and would miss it if it did; from the outside the two look identical.\n",
+      "risk_weight": 30,
+      "severity": "medium"
     },
     {
       "aliases": [],
@@ -751,6 +814,27 @@
       "name": "Exclusion filter in base search",
       "risk_rationale": "!= also drops events where the field is absent, which is frequently not what the author intended.\n",
       "risk_weight": 20,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Bound the window to the interval, push filtering to retrieval, or move the rolling computation to summary indexing so each run reads only new data.\n",
+      "category": "portfolio",
+      "cost_rationale": "Average runtime rose 50% or more between the first and second half of the measured window, the signature of a search whose cost scales with data volume rather than with the interval it is supposed to cover.\n",
+      "cost_weight": 55,
+      "detection_signals": {
+        "pipeline_checks": [
+          "fact_growing_runtime"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Job Inspector \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_ViewsearchjobpropertieswiththeJobInspector",
+      "id": "GROWING_RUNTIME",
+      "job_inspector_confirmation": "scheduler run_time averaged over the two halves of the window",
+      "kind": "detector",
+      "name": "Runtime trending up toward the interval",
+      "risk_rationale": "On its current trajectory the search meets its own cron interval and starts skipping itself; the failure arrives on the busiest day.\n",
+      "risk_weight": 45,
       "severity": "medium"
     },
     {
@@ -1154,6 +1238,27 @@
     },
     {
       "aliases": [],
+      "canonical_rewrite": "Collapse the clones into one search that carries the varying value as a by-clause, a lookup, or a case expression, and alert on the aggregate.\n",
+      "category": "portfolio",
+      "cost_rationale": "Other scheduled searches share this search's exact structure and differ only in literals (a threshold, a host, an index): the same scan runs once per clone, and the scheduler pays for each copy.\n",
+      "cost_weight": 60,
+      "detection_signals": {
+        "pipeline_checks": [
+          "fact_near_duplicate"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Schedule reports \u2014 https://help.splunk.com/en/?resourceId=Splunk_Report_Schedulereports",
+      "id": "NEAR_DUPLICATE",
+      "job_inspector_confirmation": "identical normalized SPL signature across the clones in the Auditor's similarity clustering",
+      "kind": "detector",
+      "name": "One of several clones differing only in constants",
+      "risk_rationale": "Clones drift. A fix applied to one copy misses the others, and thresholds encoded as separate searches cannot be reviewed as one policy.\n",
+      "risk_weight": 30,
+      "severity": "medium"
+    },
+    {
+      "aliases": [],
       "canonical_rewrite": "Use the documented indexed field for the sourcetype (props.conf / CIM), or add an indexed term alongside the extracted-field filter.\n",
       "category": "retrieval",
       "cost_rationale": "When an indexed (or default) field exists, filtering on the search-time equivalent forces _raw reads and extraction across more buckets.\n",
@@ -1265,6 +1370,27 @@
     },
     {
       "aliases": [],
+      "canonical_rewrite": "Point the search at the index that actually holds the data, or disable and remove it if that data was never onboarded here; audit the alert's consumers before deleting.\n",
+      "category": "portfolio",
+      "cost_rationale": "Every literal index= in the retrieval stage names an index this instance does not define, so each scheduled run dispatches, opens nothing, returns nothing, and still spends a scheduler slot and a dispatch directory.\n",
+      "cost_weight": 40,
+      "detection_signals": {
+        "pipeline_checks": [
+          "fact_phantom_index"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "savedsearches.conf \u2014 https://help.splunk.com/en/?resourceId=Splunk_Admin_savedsearchesconf",
+      "id": "PHANTOM_INDEX",
+      "job_inspector_confirmation": "scanCount=0 and eventCount=0 on every run; the index name is absent from data/indexes",
+      "kind": "detector",
+      "name": "Reads only from indexes that do not exist here",
+      "risk_rationale": "The search looks healthy in every list (enabled, scheduled, succeeding) while it can never produce a result: a typo, a decommissioned index, or an app installed on the wrong tier hides a detection gap in plain sight.\n",
+      "risk_weight": 70,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
       "canonical_rewrite": "Filter first: push search/where clauses before the transform; aggregate the smallest set that answers the question.\n",
       "category": "pipeline",
       "cost_rationale": "stats/sort/dedup are barriers: every event produced so far must arrive before they emit a row. Transforming the full candidate set then filtering the output wastes the whole difference.\n",
@@ -1307,6 +1433,27 @@
     },
     {
       "aliases": [],
+      "canonical_rewrite": "Move the selective filters into the retrieval stage (indexed fields, sourcetype, exact terms), or answer from tstats or a summary when only indexed fields are needed.\n",
+      "category": "portfolio",
+      "cost_rationale": "The _audit completion trail shows filtering efficiency below 5% with at least a thousand events scanned per run: historical proof, not a guess, that retrieval reads far more than the search keeps, on every run.\n",
+      "cost_weight": 85,
+      "detection_signals": {
+        "pipeline_checks": [
+          "fact_scan_heavy_history"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Job Inspector \u2014 https://help.splunk.com/en/?resourceId=Splunk_Search_ViewsearchjobpropertieswiththeJobInspector",
+      "id": "SCAN_HEAVY_HISTORY",
+      "job_inspector_confirmation": "sum(event_count)/sum(scan_count) from _audit over 30 days below 0.05",
+      "kind": "detector",
+      "name": "Measured scan far broader than the answer",
+      "risk_rationale": "Scan volume this far from the result set means the selective terms live after retrieval; as data grows the search slows toward its interval while its output stays the same.\n",
+      "risk_weight": 40,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
       "canonical_rewrite": "Make the search faster (see its SPL findings) or widen the interval to comfortably exceed p95 runtime.\n",
       "category": "schedule",
       "cost_rationale": "Average runtime longer than the cron interval means every run collides with the next \u2014 the search occupies its slot continuously.\n",
@@ -1325,6 +1472,27 @@
       "risk_rationale": "Guaranteed per-search max_concurrent skips: the schedule silently degrades to \"whenever the previous run finishes\".\n",
       "risk_weight": 70,
       "severity": "high"
+    },
+    {
+      "aliases": [],
+      "canonical_rewrite": "Test the condition deliberately (inject a matching event or lower the threshold briefly) to prove the alert can fire, then decide whether the threshold is right or the alert should be retired.\n",
+      "category": "portfolio",
+      "cost_rationale": "Alert actions are wired, the search runs on schedule, and across the measured window no action ever fired: every run is a scan for a condition that does not match.\n",
+      "cost_weight": 30,
+      "detection_signals": {
+        "pipeline_checks": [
+          "fact_silent_alert"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "Schedule reports \u2014 https://help.splunk.com/en/?resourceId=Splunk_Report_Schedulereports",
+      "id": "SILENT_ALERT",
+      "job_inspector_confirmation": "scheduler events with actions configured and alert_actions empty on every run in the window",
+      "kind": "detector",
+      "name": "Alert with actions that never fires",
+      "risk_rationale": "A never-firing alert is indistinguishable from a broken one until the day it should have fired. Thresholds drift, field names change, sourcetypes get renamed; the alert stays green.\n",
+      "risk_weight": 55,
+      "severity": "medium"
     },
     {
       "aliases": [],
@@ -1491,6 +1659,27 @@
     },
     {
       "aliases": [],
+      "canonical_rewrite": "Raise maxresults to cover the measured maximum, or aggregate in the search so the alert carries a summary instead of a truncated list.\n",
+      "category": "portfolio",
+      "cost_rationale": "An explicit action.<name>.maxresults sits below the search's measured average results per run, so the delivered payload is a fraction of the matches; the scan is paid in full and most of the answer is discarded at the last step.\n",
+      "cost_weight": 10,
+      "detection_signals": {
+        "pipeline_checks": [
+          "fact_truncated_alert"
+        ],
+        "regexes": []
+      },
+      "doc_citation": "savedsearches.conf action.<name>.maxresults \u2014 https://help.splunk.com/en/?resourceId=Splunk_Admin_savedsearchesconf",
+      "id": "TRUNCATED_ALERT",
+      "job_inspector_confirmation": "_audit result_count per run vs the configured maxresults on the enabled actions",
+      "kind": "detector",
+      "name": "Alert payload capped below what the search produces",
+      "risk_rationale": "Recipients see a partial list with no indication anything was dropped: the alert silently under-reports, and the missing rows are the ones that arrived last.\n",
+      "risk_weight": 75,
+      "severity": "high"
+    },
+    {
+      "aliases": [],
       "canonical_rewrite": "Constrain inside where: | tstats count from datamodel=Network_Traffic where nodename=All_Traffic index=fw by All_Traffic.action.\n",
       "category": "optimization",
       "cost_rationale": "tstats over an accelerated data model without index/sourcetype constraints scans all summary buckets \u2014 bloom-filter bucket elimination does not apply to DMA summaries the way it does to raw buckets.\n",
@@ -1630,7 +1819,7 @@
       "severity": "high"
     }
   ],
-  "ruleset_version": "d6028124f92b",
+  "ruleset_version": "e62b247dd404",
   "verdict_policy": {
     "block_at": "high",
     "description": "The single, unified verdict policy: how the worst finding severity maps to a verdict. block_at/warn_at are minimum severities in the order below. One honest verdict \u2014 critique is not a per-role dial; enforcement is a separate concern.",

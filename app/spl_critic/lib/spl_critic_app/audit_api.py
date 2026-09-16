@@ -72,6 +72,16 @@ def _row_context(row: dict) -> dict:
         facts["missing_indexes"] = ",".join(row["phantom_indexes"])
     if row.get("alert_payload_cap") is not None:
         facts["alert_payload_cap"] = row["alert_payload_cap"]
+    if row.get("truncation"):
+        t = row["truncation"]
+        facts["measured_results_per_run"] = (
+            f"avg {t.get('avg_results')}, max {t.get('max_results')}"
+        )
+    if row.get("duplicate_count"):
+        facts["near_duplicates"] = (
+            f"{row['duplicate_count']} scheduled searches share this exact structure "
+            "(differ only in constants)"
+        )
     if row.get("disabled"):
         facts["disabled"] = "yes"
     if not row.get("scheduled"):
@@ -110,6 +120,8 @@ def analysis_block(full: dict, runs_per_day: float = 0.0) -> dict:
         "model": full.get("model"),
         "cached": bool(full.get("cached")),
         "llm_error": full.get("llm_error"),
+        # judged before the admin's current guidance existed (see judge())
+        "guidance_stale": bool(full.get("guidance_stale")),
         # the Act 6 ranking: how bad (the agent's cost score) x how often
         "rank_score": round(float(full.get("cost_score", 0) or 0) * max(runs_per_day, 1.0), 1)
         if verdict
@@ -314,6 +326,24 @@ class AuditHandler(PersistentServerConnectionApplication):
                     cached["cached"] = True
                     return cached
                 if driver is None or not chosen:
+                    # Admin guidance and local rules fold into the ruleset
+                    # version, so editing them invalidates every judgment at
+                    # once. Rather than blank the Auditor until the loop has
+                    # re-judged the portfolio, a gather pass shows the last
+                    # judgment made under the shipped vocabulary alone, marked
+                    # stale; chosen rows still re-judge fresh under the new
+                    # guidance.
+                    if "+" in str(bundle.get("ruleset_version", "")):
+                        shipped_rv = str(bundle["ruleset_version"]).split("+")[0]
+                        base_rv = f"{shipped_rv}/p{prompts.PROMPT_VERSION}"
+                        rec = inference_store.get_cached(
+                            client, guards.cache_key(spl, base_rv, settings["models"], context)
+                        )
+                        stale = inference_store.result_from_record(rec) if rec else None
+                        if stale is not None and stale.get("status") == "analyzed":
+                            stale["cached"] = True
+                            stale["guidance_stale"] = True
+                            return stale
                     return None
                 if time.time() - started > budget:
                     state["remaining"] += 1

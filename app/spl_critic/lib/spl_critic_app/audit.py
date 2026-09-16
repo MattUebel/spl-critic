@@ -496,13 +496,30 @@ def audit_entry(entry: dict) -> dict[str, Any] | None:
     }
 
 
+# Auditor facts (config + measured history) as knowledgebase codes, so the
+# agent has words for them. Value-screen facts stay facts in the row's
+# `flags`; this is the same information in the vocabulary the agent answers in.
+FLAG_CODES = {
+    "phantom_index": "PHANTOM_INDEX",
+    "disabled_but_scheduled": "DISABLED_BUT_SCHEDULED",
+    "app_disabled": "APP_DISABLED",
+    "empty_report": "EMPTY_REPORT",
+    "silent_alert": "SILENT_ALERT",
+    "truncated_alert": "TRUNCATED_ALERT",
+    "scan_heavy_history": "SCAN_HEAVY_HISTORY",
+    "growing": "GROWING_RUNTIME",
+    "near_duplicate": "NEAR_DUPLICATE",
+}
+
+
 def indicator_codes(row: dict) -> list:
-    """Schedule + telemetry indicator codes for one row — agent INPUTS.
+    """Schedule + telemetry + fact indicator codes for one row — agent INPUTS.
 
     Computed on demand at analysis time (never shipped as findings): the
-    schedule-shape checks (window vs interval, hyperactive cron) and the
+    schedule-shape checks (window vs interval, hyperactive cron), the
     telemetry-backed metadata checks (self-overlap, overrun, starvation,
-    real-time dispatch, missed alert windows, no courtesy).
+    real-time dispatch, missed alert windows, no courtesy), and the gathered
+    facts (phantom index, silent alert, ...) as their catalog codes.
     """
     codes: list = []
     if row.get("scheduled"):
@@ -510,6 +527,10 @@ def indicator_codes(row: dict) -> list:
             schedule_findings(row.get("runs_per_day", 0), row.get("dispatch_earliest", ""))
         )
     codes.extend(c for c in metadata_findings(row, row.get("scheduler")) if c not in codes)
+    for flag in row.get("flags", []) or []:
+        code = FLAG_CODES.get(flag)
+        if code and code not in codes:
+            codes.append(code)
     return codes
 
 
@@ -737,6 +758,18 @@ def run_audit(client: SplunkdClient, names: list | None = None) -> dict[str, Any
         result["datamodels"] = datamodels.scan(client)
     with contextlib.suppress(Exception):  # near-duplicate saved searches
         result["duplicates"] = similarity.find_clusters(rows)
+        # membership is a fact about the row too: the agent should know a
+        # search is one of N clones, not judge it in isolation
+        cluster_of = {}
+        for cluster in result["duplicates"].get("clusters", []):
+            for member in cluster.get("members", []):
+                cluster_of[(member.get("app", ""), member.get("name", ""))] = cluster["count"]
+        for row in rows:
+            n = cluster_of.get((row.get("app", ""), row.get("name", "")))
+            if n:
+                row["duplicate_count"] = n
+                if "near_duplicate" not in row["flags"]:
+                    row["flags"].append("near_duplicate")
     with contextlib.suppress(Exception):  # vendor-default-enabled schedules
         vd = vendor_defaults.scan(rows)
         if vd.get("count"):
